@@ -9,7 +9,6 @@ import {
   CoinsIcon,
   FilterIcon,
   GemIcon,
-  LanguagesIcon,
   ListFilterIcon,
   PencilRulerIcon,
   RefreshCcwIcon,
@@ -20,7 +19,6 @@ import {
   StarIcon
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { ComponentType, SVGProps } from "react";
 import { toast } from "sonner";
@@ -108,10 +106,8 @@ import type {
   MarketDataSourceConfig,
   MarketDataStatus
 } from "@/lib/market-data-source";
-import { getLocaleRoute, replaceLocaleInPath, type Locale } from "@/lib/locale";
+import type { Locale } from "@/lib/locale";
 import {
-  LOCALE_OPTIONS,
-  LOCALE_TRIGGER_LABELS,
   UI_TEXT,
   formatDate,
   formatItemName,
@@ -833,8 +829,6 @@ function OpportunityCard({
 }
 
 export function MarketDashboard({ initialData, initialLocale, dataSource }: DashboardProps) {
-  const pathname = usePathname();
-  const router = useRouter();
   const [marketData, setMarketData] = useState(initialData);
   const [remoteManifest, setRemoteManifest] = useState<MarketDataManifest | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<MarketDataStatus | null>(null);
@@ -855,10 +849,6 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
 
   const t = UI_TEXT[locale];
   const state = marketData.state;
-  const trendsHref = `/${getLocaleRoute(locale)}/trends`;
-  const switchLocale = (nextLocale: Locale) => {
-    router.push(replaceLocaleInPath(pathname, nextLocale));
-  };
 
   useEffect(() => {
     if (!dataSource.baseUrl) {
@@ -1106,38 +1096,11 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
                   )}
                 </p>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Button asChild variant="outline">
-                  <Link href={trendsHref}>
-                    <BarChart3Icon />
-                    {t.trends}
-                  </Link>
-                </Button>
-                <Select value={locale} onValueChange={(value) => switchLocale(value as Locale)}>
-                  <SelectTrigger
-                    aria-label={`${t.language}: ${LOCALE_OPTIONS.find((option) => option.value === locale)?.label ?? locale}`}
-                    className="w-full justify-start sm:w-24"
-                  >
-                    <LanguagesIcon />
-                    <span>{LOCALE_TRIGGER_LABELS[locale]}</span>
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    <SelectGroup>
-                      <SelectLabel>{t.language}</SelectLabel>
-                      {LOCALE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                {isWaitingForRequiredRemoteData ? null : (
-                  <Badge variant="outline" className="justify-center bg-background/35 px-3 py-1.5">
-                    {formatMessage(t.targetsIndexed, { count: formatNumber(state.targets.length, 0, locale) })}
-                  </Badge>
-                )}
-              </div>
+              {isWaitingForRequiredRemoteData ? null : (
+                <Badge variant="outline" className="w-fit justify-center bg-background/35 px-3 py-1.5">
+                  {formatMessage(t.targetsIndexed, { count: formatNumber(state.targets.length, 0, locale) })}
+                </Badge>
+              )}
             </div>
             <LandingHelperToast t={t} />
             {productionDataUnavailable ? (

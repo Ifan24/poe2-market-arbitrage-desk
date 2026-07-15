@@ -1,8 +1,6 @@
 "use client";
 
-import { ArrowDownUpIcon, BarChart3Icon, FilterIcon, LanguagesIcon, SearchIcon, SparklesIcon, TrendingUpIcon } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { ArrowDownUpIcon, FilterIcon, SearchIcon, TrendingUpIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart } from "recharts";
 
@@ -15,12 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { buildAppreciationRows, filterAppreciationRows } from "@/lib/appreciation-model";
-import { getLocaleRoute, replaceLocaleInPath, type Locale } from "@/lib/locale";
+import type { Locale } from "@/lib/locale";
 import type { MarketData } from "@/lib/market-data";
 import type { MarketDataManifest, MarketDataSourceConfig } from "@/lib/market-data-source";
 import {
-  LOCALE_OPTIONS,
-  LOCALE_TRIGGER_LABELS,
   UI_TEXT,
   formatDate,
   formatItemName,
@@ -120,8 +116,6 @@ function PriceSparkline({
 }
 
 export function MarketAppreciationPage({ initialData, initialLocale, dataSource }: MarketAppreciationPageProps) {
-  const pathname = usePathname();
-  const router = useRouter();
   const [marketData, setMarketData] = useState(initialData);
   const [trendIndex, setTrendIndex] = useState<MarketTrendIndex | null>(null);
   const [remoteError, setRemoteError] = useState("");
@@ -130,9 +124,6 @@ export function MarketAppreciationPage({ initialData, initialLocale, dataSource 
   const [signal, setSignal] = useState<"all" | AppreciationSignal>("all");
 
   const t = UI_TEXT[locale];
-  const localeRoute = getLocaleRoute(locale);
-  const trendsHref = `/${localeRoute}/trends`;
-  const scannerHref = `/${localeRoute}`;
 
   useEffect(() => {
     setLocale(initialLocale);
@@ -184,10 +175,6 @@ export function MarketAppreciationPage({ initialData, initialLocale, dataSource 
   const latestDate = trendIndex?.appreciation?.generatedAt || trendIndex?.generatedAt || marketData.state.importedAt;
   const bestRow = rows[0];
 
-  const switchLocale = (nextLocale: Locale) => {
-    router.push(replaceLocaleInPath(pathname, nextLocale));
-  };
-
   return (
     <div className="market-shell min-h-screen">
       <header className="border-b bg-background/80">
@@ -202,39 +189,6 @@ export function MarketAppreciationPage({ initialData, initialLocale, dataSource 
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
                 {t.appreciationSignalsDescription} - <LocalSnapshotTime value={latestDate} locale={locale} t={t} />
               </p>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Button asChild variant="outline">
-                <Link href={trendsHref}>
-                  <BarChart3Icon />
-                  {t.trends}
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href={scannerHref}>
-                  <SparklesIcon />
-                  {t.scanner}
-                </Link>
-              </Button>
-              <Select value={locale} onValueChange={(value) => switchLocale(value as Locale)}>
-                <SelectTrigger
-                  aria-label={`${t.language}: ${LOCALE_OPTIONS.find((option) => option.value === locale)?.label ?? locale}`}
-                  className="w-full justify-start sm:w-24"
-                >
-                  <LanguagesIcon />
-                  <span>{LOCALE_TRIGGER_LABELS[locale]}</span>
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectGroup>
-                    <SelectLabel>{t.language}</SelectLabel>
-                    {LOCALE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           {remoteError ? (

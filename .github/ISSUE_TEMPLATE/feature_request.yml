@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest an improvement for the POE2 Market Arbitrage Desk
+title: "[Feature]: "
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the desk. Please describe the trading problem first so the proposed feature has clear context.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe what is difficult, slow, or unclear today.
+      placeholder: When I am comparing routes, I find it difficult to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+      description: Describe the behavior or workflow you would find useful.
+      placeholder: I would like the desk to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Tell us about any workaround or alternative you already tried.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add screenshots, examples, or relevant POE2 market context here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for a similar request.
+          required: true
+        - label: This request is about the website experience, not a live price correction.
+          required: true

@@ -5,16 +5,13 @@ import {
   BarChart3Icon,
   FilterIcon,
   GemIcon,
-  LanguagesIcon,
   RefreshCcwIcon,
   SearchIcon,
   ShieldCheckIcon,
-  SparklesIcon,
   TrendingUpIcon,
   WavesIcon
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
@@ -44,11 +41,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { MarketData, MarketItem } from "@/lib/market-data";
 import type { MarketDataManifest, MarketDataSourceConfig } from "@/lib/market-data-source";
 import { normalizeFilters, type MarketFilters } from "@/lib/market-arbitrage";
-import { getLocaleRoute, replaceLocaleInPath, type Locale } from "@/lib/locale";
+import type { Locale } from "@/lib/locale";
 import { getTrendRouteHref } from "@/lib/trend-route-links";
 import {
-  LOCALE_OPTIONS,
-  LOCALE_TRIGGER_LABELS,
   UI_TEXT,
   formatDate,
   formatItemName,
@@ -641,8 +636,6 @@ function LocalSnapshotTime({
 }
 
 export function MarketTrendsPage({ initialData, initialLocale, dataSource }: MarketTrendsPageProps) {
-  const pathname = usePathname();
-  const router = useRouter();
   const [marketData, setMarketData] = useState(initialData);
   const [trendIndex, setTrendIndex] = useState<MarketTrendIndex | null>(null);
   const [trendError, setTrendError] = useState("");
@@ -658,12 +651,6 @@ export function MarketTrendsPage({ initialData, initialLocale, dataSource }: Mar
   const isMobileLayout = useIsMobileLayout();
 
   const t = UI_TEXT[locale];
-  const localeRoute = getLocaleRoute(locale);
-  const scannerHref = `/${localeRoute}`;
-  const storeValueHref = `/${localeRoute}/store-value`;
-  const switchLocale = (nextLocale: Locale) => {
-    router.push(replaceLocaleInPath(pathname, nextLocale));
-  };
 
   useEffect(() => {
     if (!dataSource.baseUrl) {
@@ -778,43 +765,12 @@ export function MarketTrendsPage({ initialData, initialLocale, dataSource }: Mar
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Button asChild variant="outline">
-                <Link href={scannerHref}>
-                  <SparklesIcon />
-                  {t.scanner}
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href={storeValueHref}>
-                  <TrendingUpIcon />
-                  {t.storeValue}
-                </Link>
-              </Button>
               <Button asChild>
                 <a href="#trend-routes" data-testid="trend-routes-jump">
                   <ArrowDownUpIcon />
                   {t.viewRankedRoutes}
                 </a>
               </Button>
-              <Select value={locale} onValueChange={(value) => switchLocale(value as Locale)}>
-                <SelectTrigger
-                  aria-label={`${t.language}: ${LOCALE_OPTIONS.find((option) => option.value === locale)?.label ?? locale}`}
-                  className="w-full justify-start sm:w-24"
-                >
-                  <LanguagesIcon />
-                  <span>{LOCALE_TRIGGER_LABELS[locale]}</span>
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectGroup>
-                    <SelectLabel>{t.language}</SelectLabel>
-                    {LOCALE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           {remoteError ? (

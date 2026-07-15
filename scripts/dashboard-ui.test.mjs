@@ -8,6 +8,12 @@ import { getLocaleFromAcceptLanguage, getSupportedLocale } from "../lib/locale.t
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dashboard = fs.readFileSync(path.join(__dirname, "..", "components", "market-dashboard.tsx"), "utf8");
 const landingHelper = fs.readFileSync(path.join(__dirname, "..", "components", "landing-helper-toast.tsx"), "utf8");
+const siteNavbar = fs.readFileSync(path.join(__dirname, "..", "components", "site-navbar.tsx"), "utf8");
+const sitePreferences = fs.readFileSync(path.join(__dirname, "..", "lib", "site-preferences.ts"), "utf8");
+const featureRequestTemplate = fs.readFileSync(
+  path.join(__dirname, "..", ".github", "ISSUE_TEMPLATE", "feature_request.yml"),
+  "utf8"
+);
 const dashboardPreferences = fs.readFileSync(path.join(__dirname, "..", "lib", "dashboard-preferences.ts"), "utf8");
 const marketArbitrage = fs.readFileSync(path.join(__dirname, "..", "lib", "market-arbitrage.ts"), "utf8");
 const dashboardModel = fs.readFileSync(path.join(__dirname, "..", "lib", "dashboard-model.ts"), "utf8");
@@ -131,7 +137,8 @@ test("localized trends page ranks profit persistence separately from the scanner
     /<MarketTrendsPage initialData=\{marketData\} initialLocale=\{locale\} dataSource=\{bootstrap\.source\} \/>/
   );
   assert.match(localizedTrendsPage, /getLocalizedPageMetadata\(locale, "trends"\)/);
-  assert.match(dashboard, /href=\{trendsHref\}/);
+  assert.match(localizedLayout, /<SiteNavbar initialLocale=\{initialLocale\} \/>/);
+  assert.match(siteNavbar, /`\/\$\{localeRoute\}\/trends`/);
   assert.match(marketTrendsPage, /buildTrendRows/);
   assert.match(marketTrendsPage, /filterTrendRows/);
   assert.match(marketTrendsPage, /normalizeFilters/);
@@ -352,10 +359,12 @@ test("daily market baseline commits only the static baseline JSON", () => {
 
 test("dashboard exposes language switching and poe2db zh-TW currency names", () => {
   assert.match(marketLocale, /LOCALE_OPTIONS/);
-  assert.match(dashboard, /switchLocale/);
-  assert.match(dashboard, /router\.push/);
-  assert.match(marketTrendsPage, /switchLocale/);
-  assert.match(marketTrendsPage, /router\.push/);
+  assert.match(siteNavbar, /switchLocale/);
+  assert.match(siteNavbar, /router\.push/);
+  assert.match(siteNavbar, /replaceLocaleInPath/);
+  assert.match(siteNavbar, /LOCALE_OPTIONS\.map/);
+  assert.doesNotMatch(dashboard, /switchLocale/);
+  assert.doesNotMatch(marketTrendsPage, /switchLocale/);
   assert.match(marketLocale, /formatItemName/);
   assert.equal(currencyNamesZhTw["Exalted Orb"], "崇高石");
   assert.equal(currencyNamesZhTw["Divine Orb"], "神聖石");
@@ -366,6 +375,26 @@ test("dashboard exposes language switching and poe2db zh-TW currency names", () 
   assert.equal(currencyNamesKo["Exalted Orb"], "엑잘티드 오브");
   assert.equal(currencyNamesKo["Divine Orb"], "신성한 오브");
   assert.equal(currencyNamesKo["Chaos Orb"], "카오스 오브");
+});
+
+test("shared navbar owns global navigation and browser-local viewing settings", () => {
+  assert.match(localizedLayout, /SiteNavbar/);
+  assert.match(siteNavbar, /t\.scanner/);
+  assert.match(siteNavbar, /t\.trends/);
+  assert.match(siteNavbar, /t\.storeValue/);
+  assert.match(siteNavbar, /reduceMotion/);
+  assert.match(siteNavbar, /setGuideOpen\(true\)/);
+  assert.match(sitePreferences, /poe2-site-preferences:v1/);
+  assert.match(sitePreferences, /window\.localStorage/);
+  assert.doesNotMatch(siteNavbar, /compactLayout/);
+  assert.doesNotMatch(sitePreferences, /compactLayout/);
+  assert.doesNotMatch(marketRouteDetailPage, /scannerHref/);
+  assert.doesNotMatch(marketRouteDetailPage, /<BarChart3Icon \/>\s*\{t\.trends\}/);
+  assert.match(siteNavbar, /issues\/new\?template=feature_request\.yml/);
+  assert.match(siteNavbar, /requestFeature/);
+  assert.match(featureRequestTemplate, /name: Feature request/);
+  assert.match(featureRequestTemplate, /id: problem/);
+  assert.match(featureRequestTemplate, /id: solution/);
 });
 
 test("dashboard default locale follows supported user languages", () => {

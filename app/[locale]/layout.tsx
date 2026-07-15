@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteNavbar } from "@/components/site-navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { DEFAULT_LOCALE, getLocaleFromRoute } from "@/lib/locale";
 import { ROOT_METADATA } from "@/lib/site-metadata";
@@ -24,6 +25,7 @@ export default async function LocaleLayout({
   return (
     <html lang={initialLocale}>
       <body>
+        <SiteNavbar initialLocale={initialLocale} />
         {children}
         <SiteFooter locale={initialLocale} />
         <Toaster />

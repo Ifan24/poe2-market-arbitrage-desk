@@ -3,14 +3,10 @@
 import {
   ArrowDownUpIcon,
   ArrowLeftIcon,
-  BarChart3Icon,
-  LanguagesIcon,
   ListChecksIcon,
-  SparklesIcon,
   TrendingUpIcon
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
@@ -29,12 +25,10 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getIntegerRoiRows } from "@/lib/market-arbitrage";
-import { getLocaleRoute, replaceLocaleInPath, type Locale } from "@/lib/locale";
+import { getLocaleRoute, type Locale } from "@/lib/locale";
 import type { MarketData } from "@/lib/market-data";
 import type { MarketDataManifest, MarketDataSourceConfig } from "@/lib/market-data-source";
 import {
-  LOCALE_OPTIONS,
-  LOCALE_TRIGGER_LABELS,
   UI_TEXT,
   formatDate,
   formatItemName,
@@ -216,8 +210,6 @@ function RouteLoading({ t }: { t: UiText }) {
 }
 
 export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, routeKey }: MarketRouteDetailPageProps) {
-  const pathname = usePathname();
-  const router = useRouter();
   const [marketData, setMarketData] = useState(initialData);
   const [trendIndex, setTrendIndex] = useState<MarketTrendIndex | null>(null);
   const [remoteError, setRemoteError] = useState("");
@@ -226,7 +218,6 @@ export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, 
   const t = UI_TEXT[locale];
   const localeRoute = getLocaleRoute(locale);
   const trendsHref = `/${localeRoute}/trends`;
-  const scannerHref = `/${localeRoute}`;
 
   useEffect(() => {
     setLocale(initialLocale);
@@ -274,10 +265,6 @@ export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, 
   const row = useMemo(() => getTrendRouteRow(marketData.state, trendIndex, routeKey), [marketData.state, routeKey, trendIndex]);
   const latestDate = trendIndex?.generatedAt || marketData.state.importedAt;
   const isWaitingForRequiredRemoteData = dataSource.requireRemote && !remoteError && marketData.state.items.length === 0;
-
-  const switchLocale = (nextLocale: Locale) => {
-    router.push(replaceLocaleInPath(pathname, nextLocale));
-  };
 
   if (isWaitingForRequiredRemoteData) {
     return (
@@ -337,31 +324,6 @@ export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, 
                   {t.backToTrends}
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link href={scannerHref}>
-                  <SparklesIcon />
-                  {t.scanner}
-                </Link>
-              </Button>
-              <Select value={locale} onValueChange={(value) => switchLocale(value as Locale)}>
-                <SelectTrigger
-                  aria-label={`${t.language}: ${LOCALE_OPTIONS.find((option) => option.value === locale)?.label ?? locale}`}
-                  className="w-full justify-start sm:w-24"
-                >
-                  <LanguagesIcon />
-                  <span>{LOCALE_TRIGGER_LABELS[locale]}</span>
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectGroup>
-                    <SelectLabel>{t.language}</SelectLabel>
-                    {LOCALE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           {remoteError ? (
@@ -484,20 +446,6 @@ export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, 
           </Card>
         </section>
 
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href={trendsHref}>
-              <BarChart3Icon />
-              {t.trends}
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={scannerHref}>
-              <SparklesIcon />
-              {t.scanner}
-            </Link>
-          </Button>
-        </div>
       </main>
     </div>
   );
