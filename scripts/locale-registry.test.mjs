@@ -102,44 +102,18 @@ test("supported locale registry covers routes, selector options, and UI text", (
 });
 
 test("complete locale pages translate visible app copy", () => {
-  const visibleAppCopyKeys = [
-    "trends",
-    "trendConfidenceDescription",
-    "trendRoutes",
-    "bestRoi",
-    "samples",
-    "searchTargets",
-    "category",
-    "allCategories",
-    "marketFilters",
-    "filtersHint",
-    "resetView",
-    "valueFilter",
-    "stockFilter",
-    "priceMin",
-    "priceMax",
-    "opportunityFocus",
-    "opportunityFocusDescription",
-    "mostConsistent",
-    "improvingNow",
-    "strongestFlow",
-    "storeValue",
-    "viewRankedRoutes",
-    "landingHelperTitle",
-    "landingHelperDescription",
-    "landingHelperAction",
-    "landingHelperDismiss",
-    "landingGuideTitle",
-    "landingGuideScan",
-    "landingGuideFilter",
-    "landingGuidePlan",
-    "landingGuideVerify",
-    "landingGuideFreshness",
-    "landingGuideDisclaimer",
-    "landingGuideSource"
-  ];
+  const visibleAppCopyKeys = Object.keys(UI_TEXT.en);
   const allowedSharedCopy = {
-    fr: new Set(["stockFilter"])
+    "zh-TW": new Set(["roi", "roiMax", "roiMin", "min24h", "min7d", "persistence24h", "persistence7d"]),
+    ja: new Set(["roi", "roiMax", "roiMin", "min24h", "min7d", "persistence24h", "persistence7d"]),
+    ko: new Set(["roi", "roiMax", "roiMin", "min24h", "min7d", "persistence24h", "persistence7d"]),
+    ru: new Set(["roi", "roiMax", "roiMin"]),
+    "zh-CN": new Set(["roi", "roiMax", "roiMin"]),
+    pt: new Set(["roi", "roiMax", "roiMin", "min24h", "min7d", "persistence24h", "persistence7d", "scanner", "volume", "volumePrefix"]),
+    th: new Set(["roiMax", "roiMin"]),
+    fr: new Set(["roiMax", "roiMin", "signal", "source", "stock", "stockFilter", "min24h", "persistence24h", "scanner", "stableSignal", "volume", "volumePrefix"]),
+    de: new Set(["gold", "name", "roi", "roiMax", "roiMin", "route", "signal", "min24h", "min7d", "persistence24h", "persistence7d", "scanner"]),
+    es: new Set(["roiMax", "roiMin", "min24h", "min7d", "persistence24h", "persistence7d"])
   };
 
   for (const locale of SUPPORTED_LOCALES.filter((locale) => locale !== "en")) {

@@ -108,7 +108,7 @@ export function LandingHelperToast({ t }: { t: UiText }) {
 
   return (
     <Dialog open={guideOpen} onOpenChange={setGuideOpen}>
-      <DialogContent className="market-panel max-h-[min(92vh,760px)] overflow-y-auto bg-card text-card-foreground sm:max-w-lg">
+      <DialogContent closeLabel={t.close} className="market-panel max-h-[min(92vh,760px)] overflow-y-auto bg-card text-card-foreground sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RouteIcon className="text-primary" aria-hidden="true" />

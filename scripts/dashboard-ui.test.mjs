@@ -14,6 +14,8 @@ const dashboardModel = fs.readFileSync(path.join(__dirname, "..", "lib", "dashbo
 const marketDisplay = fs.readFileSync(path.join(__dirname, "..", "components", "market-display.tsx"), "utf8");
 const marketSeoSummary = fs.readFileSync(path.join(__dirname, "..", "components", "market-seo-summary.tsx"), "utf8");
 const marketTrendsPage = fs.readFileSync(path.join(__dirname, "..", "components", "market-trends-page.tsx"), "utf8");
+const marketAppreciationPage = fs.readFileSync(path.join(__dirname, "..", "components", "market-appreciation-page.tsx"), "utf8");
+const marketRouteDetailPage = fs.readFileSync(path.join(__dirname, "..", "components", "market-route-detail-page.tsx"), "utf8");
 const marketDisplayPolicy = fs.readFileSync(path.join(__dirname, "..", "lib", "market-display-policy.ts"), "utf8");
 const sonner = fs.readFileSync(path.join(__dirname, "..", "components", "ui", "sonner.tsx"), "utf8");
 const marketLocale = fs.readFileSync(path.join(__dirname, "..", "lib", "market-locale.ts"), "utf8");
@@ -72,6 +74,25 @@ test("dashboard renders through the shadcn React surface", () => {
   assert.match(dashboard, /@\/components\/ui\/table/);
   assert.match(dashboard, /@\/components\/ui\/select/);
   assert.match(dashboard, /<LandingHelperToast t=\{t\} \/>/);
+});
+
+test("localized pages do not render English-only loading, error, currency, or dialog labels", () => {
+  assert.doesNotMatch(dashboard, /["'](?:Loading latest market data|Market data could not be loaded[^"']*|Using the saved market data[^"']*|Loading the latest market data[^"']*|Refresh failed|Very stale|Stale|Fresh)["']/);
+  assert.match(dashboard, /t\.loadingMarketData/);
+  assert.match(dashboard, /t\.marketDataLoadFailed/);
+  assert.match(dashboard, /t\.usingSavedMarketData/);
+  assert.match(dashboard, /t\.refreshFailed/);
+  assert.match(dashboard, /t\.veryStale/);
+  assert.match(dashboard, /t\.stale/);
+  assert.match(dashboard, /t\.fresh/);
+  assert.match(marketAppreciationPage, /<CurrencyName name="Divine Orb" locale=\{locale\} compact \/>/);
+  assert.match(marketAppreciationPage, /currencyLabel=\{formatItemName\(\{ name: "Divine Orb" \}, locale\)\}/);
+
+  for (const localizedDialogPage of [dashboard, landingHelper, marketTrendsPage, marketRouteDetailPage]) {
+    if (localizedDialogPage.includes("<DialogContent")) {
+      assert.match(localizedDialogPage, /<DialogContent[^>]*closeLabel=\{t\.close\}/s);
+    }
+  }
 });
 
 test("dashboard landing help uses one persistent, explicit Sonner prompt", () => {

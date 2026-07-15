@@ -429,7 +429,7 @@ function RouteTrendDetailDialog({
         onClose();
       }
     }}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-4xl">
+      <DialogContent closeLabel={t.close} className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-4xl">
         {row ? (
           <>
             <DialogHeader>

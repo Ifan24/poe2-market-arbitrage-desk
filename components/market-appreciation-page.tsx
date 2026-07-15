@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart } from "recharts";
 
-import { CategoryBadge, ItemIcon } from "@/components/market-display";
+import { CategoryBadge, CurrencyName, ItemIcon } from "@/components/market-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,13 +36,6 @@ type MarketAppreciationPageProps = {
   initialLocale: Locale;
   dataSource: MarketDataSourceConfig;
 };
-
-const priceChartConfig = {
-  priceDivine: {
-    label: "Divine",
-    color: "var(--primary)"
-  }
-} satisfies ChartConfig;
 
 function resolveRemoteUrl(baseUrl: string, pathOrUrl: string) {
   return new URL(pathOrUrl, `${baseUrl.replace(/\/+$/, "")}/`).toString();
@@ -90,10 +83,23 @@ function getSignalVariant(signal: AppreciationSignal): "default" | "secondary" |
   return variants[signal];
 }
 
-function PriceSparkline({ points }: { points: Array<{ at: string; priceDivine: number }> }) {
+function PriceSparkline({
+  points,
+  currencyLabel
+}: {
+  points: Array<{ at: string; priceDivine: number }>;
+  currencyLabel: string;
+}) {
   if (points.length < 2) {
     return <span className="text-muted-foreground">--</span>;
   }
+
+  const priceChartConfig = {
+    priceDivine: {
+      label: currencyLabel,
+      color: "var(--primary)"
+    }
+  } satisfies ChartConfig;
 
   return (
     <ChartContainer config={priceChartConfig} className="aspect-auto h-12 w-24">
@@ -345,10 +351,13 @@ export function MarketAppreciationPage({ initialData, initialLocale, dataSource 
                           <Badge variant={getSignalVariant(row.asset.signal)}>{getSignalLabel(row.asset.signal, t)}</Badge>
                         </TableCell>
                         <TableCell className="font-medium text-primary">
-                          {formatNumber(row.asset.currentPriceDivine, 2, locale)} Divine
+                          {formatNumber(row.asset.currentPriceDivine, 2, locale)} <CurrencyName name="Divine Orb" locale={locale} compact />
                         </TableCell>
                         <TableCell>
-                          <PriceSparkline points={row.asset.series} />
+                          <PriceSparkline
+                            points={row.asset.series}
+                            currencyLabel={formatItemName({ name: "Divine Orb" }, locale)}
+                          />
                         </TableCell>
                         <TableCell>{row.asset.windows["7d"].changePercent === null ? "--" : formatPercent(row.asset.windows["7d"].changePercent, locale)}</TableCell>
                         <TableCell>{row.asset.windows["7d"].volatilityPercent === null ? "--" : formatPercent(row.asset.windows["7d"].volatilityPercent, locale)}</TableCell>

@@ -255,21 +255,23 @@ function getFreshnessKind(
 function FreshnessBadge({
   importedAt,
   manifest,
-  status
+  status,
+  t
 }: {
   importedAt?: string;
   manifest: MarketDataManifest | null;
   status: MarketDataStatus | null;
+  t: UiText;
 }) {
   const kind = getFreshnessKind(importedAt, manifest);
   const statusOk = status?.ok ?? true;
   const label = !statusOk
-    ? "Refresh failed"
+    ? t.refreshFailed
     : kind === "very-stale"
-      ? "Very stale"
+      ? t.veryStale
       : kind === "stale"
-        ? "Stale"
-        : "Fresh";
+        ? t.stale
+        : t.fresh;
   const variant = !statusOk || kind === "very-stale" ? "destructive" : kind === "stale" ? "outline" : "secondary";
 
   return (
@@ -509,7 +511,7 @@ function TradePlan({
           {t.roundLots}
         </Button>
       </DialogTrigger>
-      <DialogContent className="market-panel max-h-[min(92vh,820px)] gap-0 overflow-hidden bg-card p-0 text-card-foreground shadow-2xl sm:max-w-4xl">
+      <DialogContent closeLabel={t.close} className="market-panel max-h-[min(92vh,820px)] gap-0 overflow-hidden bg-card p-0 text-card-foreground shadow-2xl sm:max-w-4xl">
         <DialogHeader className="border-b px-5 py-4 pr-12 sm:pr-5">
           <DialogTitle className="flex items-center gap-2">
             <PencilRulerIcon />
@@ -1064,8 +1066,8 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
   }
 
   const isWaitingForRequiredRemoteData = dataSource.requireRemote && !remoteManifest && !remoteError;
-  const snapshotLabel = isWaitingForRequiredRemoteData ? "Loading latest market data" : t.currentSnapshot;
-  const leagueLabel = isWaitingForRequiredRemoteData ? "Loading" : marketData.league || t.localSnapshot;
+  const snapshotLabel = isWaitingForRequiredRemoteData ? t.loadingMarketData : t.currentSnapshot;
+  const leagueLabel = isWaitingForRequiredRemoteData ? t.loadingMarketData : marketData.league || t.localSnapshot;
 
   return (
     <TooltipProvider>
@@ -1092,14 +1094,14 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
                     <>
                       <span aria-hidden="true">·</span>
                       <Badge variant="outline" className="bg-background/35">
-                        Loading
+                        {t.loadingMarketData}
                       </Badge>
                     </>
                   ) : (
                     <>
                       <span aria-hidden="true">·</span>
                       <LocalSnapshotTime value={state.importedAt} locale={locale} t={t} />
-                      <FreshnessBadge importedAt={state.importedAt} manifest={remoteManifest} status={remoteStatus} />
+                      <FreshnessBadge importedAt={state.importedAt} manifest={remoteManifest} status={remoteStatus} t={t} />
                     </>
                   )}
                 </p>
@@ -1140,16 +1142,16 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
             <LandingHelperToast t={t} />
             {productionDataUnavailable ? (
               <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                Market data could not be loaded. Please try refreshing the page.
+                {t.marketDataLoadFailed}
               </div>
             ) : remoteError && !dataSource.requireRemote ? (
               <div className="rounded-md border bg-background/45 px-3 py-2 text-sm text-muted-foreground">
-                Using the saved market data while the latest data is unavailable.
+                {t.usingSavedMarketData}
               </div>
             ) : null}
             {isWaitingForRequiredRemoteData ? (
               <div className="rounded-md border bg-background/45 px-3 py-3 text-sm text-muted-foreground">
-                Loading the latest market data.
+                {t.loadingMarketData}
               </div>
             ) : null}
             {isWaitingForRequiredRemoteData ? null : (

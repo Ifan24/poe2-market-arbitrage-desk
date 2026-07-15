@@ -30,6 +30,15 @@ This repo is a POE2 market arbitrage dashboard deployed as a Next.js app on Verc
 - Keep user-facing website copy focused on the product experience and domain language. Do not expose implementation details such as R2, manifests, snapshots, providers, buckets, fallback files, data sources, or other plumbing in UI text unless the screen is explicitly an operator/debug surface.
 - Treat Vercel/static snapshot behavior as the default app-shell path. Runtime writes to `public/` are local-development behavior, not durable hosted storage.
 
+## Localization Source Of Truth
+
+- Treat the localized POE2DB `Currency_Exchange` pages configured in `LOCALE_DESCRIPTORS` as the source of truth for game-facing item names and category terminology. Do not invent or directly translate Path of Exile terms when a POE2DB localized value exists.
+- Before changing localized market names, run `npm run update:poe2db-currency-names -- --check` across every configured locale. The script aligns source and localized rows by stable exchange `href`; use `npm run update:poe2db-currency-names -- <locale...>` to refresh only the locales reported as stale.
+- English fallback is acceptable only when the corresponding item row is absent from that locale's live POE2DB page. Report those source-page gaps explicitly; do not present them as completed translations.
+- The currency-name script validates item names only. When changing `TAG_LABELS`, also compare the relevant `<h5>` category headings and `.currency-exchange-subtitle` labels on every affected POE2DB locale page. Provider tags may not equal the player-facing category: map them to the POE2DB category that describes their actual item set (for example, `ultimatum` market rows are Soul Cores).
+- Keep app-owned interface copy such as loading, error, freshness, and dialog labels separate from game terminology. Translate that copy naturally, but do not describe it as an official POE2DB or game translation.
+- Add regression assertions for source-backed category terms, then run `npm test`, `npx tsc --noEmit`, and `npm run build` for localization changes.
+
 ## Market Data Storage Direction
 
 - Prefer Cloudflare R2 as the durable data plane for generated market artifacts: latest/manifest files, trend summaries, raw hourly snapshots, and item icons. Git should contain source code and small config, not hourly market history.
