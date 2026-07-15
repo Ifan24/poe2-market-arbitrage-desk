@@ -38,6 +38,6 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+          R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
           POE2SCOUT_ACTIVE_LEAGUE_SHORT_NAME: ${{ vars.POE2SCOUT_ACTIVE_LEAGUE_SHORT_NAME || 'runes' }}
         run: npm run upload:market-data:r2
