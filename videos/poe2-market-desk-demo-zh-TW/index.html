@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #15100b;
+      }
+
+      body {
+        color: #f6e5c8;
+        font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+        letter-spacing: 0.01em;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 18% 18%, rgba(232, 173, 67, 0.16), rgba(232, 173, 67, 0) 28%),
+          radial-gradient(circle at 86% 76%, rgba(120, 216, 148, 0.08), rgba(120, 216, 148, 0) 30%),
+          #15100b;
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+
+      .scene {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #15100b;
+      }
+
+      .scene-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        flex-direction: column;
+        justify-content: center;
+        gap: 34px;
+        padding: 104px 132px;
+      }
+
+      .grain {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background-image:
+          linear-gradient(rgba(246, 229, 200, 0.023) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(246, 229, 200, 0.018) 1px, transparent 1px);
+        background-size: 64px 64px;
+        opacity: 0.5;
+      }
+
+      .orb {
+        position: absolute;
+        width: 440px;
+        height: 440px;
+        border: 1px solid rgba(232, 173, 67, 0.22);
+        border-radius: 999px;
+        opacity: 0.44;
+      }
+
+      .orb-a {
+        top: 74px;
+        right: 122px;
+      }
+
+      .orb-b {
+        bottom: -180px;
+        left: -82px;
+      }
+
+      .eyebrow {
+        color: #e8ad43;
+        font-size: 27px;
+        font-weight: 850;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .headline {
+        max-width: 1060px;
+        color: #f6e5c8;
+        font-size: 78px;
+        font-weight: 900;
+        line-height: 1.05;
+      }
+
+      .subhead {
+        max-width: 850px;
+        color: #d7c2a1;
+        font-size: 32px;
+        font-weight: 350;
+        line-height: 1.28;
+      }
+
+      .shell {
+        border: 2px solid rgba(122, 85, 38, 0.82);
+        border-radius: 22px;
+        background: rgba(36, 23, 13, 0.94);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+      }
+
+      .icon {
+        width: 54px;
+        height: 54px;
+        flex: 0 0 auto;
+        border: 2px solid rgba(246, 229, 200, 0.18);
+        border-radius: 12px;
+        background: #120c07;
+        object-fit: cover;
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+      }
+
+      .icon-lg {
+        width: 66px;
+        height: 66px;
+        border-radius: 14px;
+      }
+
+      .gold-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: #e8ad43;
+        color: #1a1008;
+        font-size: 22px;
+        font-weight: 900;
+        padding: 10px 20px;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 0.78fr 1.22fr;
+        align-items: center;
+        gap: 58px;
+      }
+
+      .best-buy-panel {
+        display: grid;
+        gap: 24px;
+        width: 1020px;
+        padding: 28px;
+      }
+
+      .search-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        min-height: 76px;
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 14px;
+        background: rgba(17, 11, 6, 0.64);
+        padding: 0 22px;
+        color: #f6e5c8;
+        font-size: 28px;
+        font-weight: 800;
+      }
+
+      .toggle {
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 14px;
+        background: rgba(17, 11, 6, 0.64);
+        color: #f6e5c8;
+        font-size: 24px;
+        font-weight: 850;
+        padding: 24px 28px;
+      }
+
+      .currency-options {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .currency-card {
+        min-height: 190px;
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 14px;
+        background: rgba(29, 19, 11, 0.9);
+        padding: 22px;
+      }
+
+      .currency-card.best {
+        border-color: #e8ad43;
+        box-shadow: inset 0 0 0 1px rgba(232, 173, 67, 0.45);
+      }
+
+      .card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .card-title {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 14px;
+        color: #f6e5c8;
+        font-size: 26px;
+        font-weight: 800;
+      }
+
+      .price-grid {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px 18px;
+        margin-top: 26px;
+        color: #bda988;
+        font-size: 20px;
+      }
+
+      .price-value {
+        color: #f6e5c8;
+        font-family: monospace;
+        font-size: 22px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .table-panel {
+        display: grid;
+        width: 1580px;
+        overflow: hidden;
+      }
+
+      .table-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 86px;
+        border-bottom: 1px solid rgba(122, 85, 38, 0.72);
+        padding: 0 28px;
+      }
+
+      .table-title h2 {
+        color: #f6e5c8;
+        font-size: 34px;
+        font-weight: 900;
+      }
+
+      .table-title span {
+        color: #bda988;
+        font-size: 22px;
+        font-weight: 650;
+      }
+
+      .market-row {
+        display: grid;
+        grid-template-columns: 74px 1.9fr 0.72fr 0.72fr 0.7fr 0.98fr 0.72fr;
+        align-items: center;
+        gap: 24px;
+        min-height: 118px;
+        border-bottom: 1px solid rgba(122, 85, 38, 0.5);
+        padding: 0 28px;
+        color: #f6e5c8;
+      }
+
+      .market-row.header {
+        min-height: 58px;
+        color: #bda988;
+        font-size: 18px;
+        font-weight: 850;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .market-row.active {
+        background: rgba(232, 173, 67, 0.075);
+      }
+
+      .target-cell {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .target-name {
+        overflow: hidden;
+        color: #f6e5c8;
+        font-size: 24px;
+        font-weight: 850;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .target-meta {
+        margin-top: 5px;
+        color: #bda988;
+        font-size: 19px;
+      }
+
+      .mini-price {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #f6e5c8;
+        font-family: monospace;
+        font-size: 23px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .mini-price .icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+      }
+
+      .roi {
+        justify-self: start;
+        border-radius: 999px;
+        background: #e8ad43;
+        color: #1a1008;
+        font-family: monospace;
+        font-size: 22px;
+        font-weight: 900;
+        padding: 10px 16px;
+      }
+
+      .plan-button {
+        justify-self: end;
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 12px;
+        background: rgba(17, 11, 6, 0.7);
+        color: #f6e5c8;
+        font-size: 22px;
+        font-weight: 850;
+        padding: 14px 18px;
+      }
+
+      .modal-scene .scene-content {
+        align-items: center;
+      }
+
+      .modal {
+        width: 1240px;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+
+      .modal-head {
+        border-bottom: 1px solid rgba(122, 85, 38, 0.72);
+        padding: 20px 30px;
+      }
+
+      .modal-title {
+        color: #f6e5c8;
+        font-size: 34px;
+        font-weight: 900;
+      }
+
+      .modal-copy {
+        margin-top: 8px;
+        color: #bda988;
+        font-size: 22px;
+      }
+
+      .modal-body {
+        display: grid;
+        gap: 16px;
+        padding: 22px;
+      }
+
+      .route-strip {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 18px;
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 14px;
+        background: rgba(17, 11, 6, 0.46);
+        padding: 14px;
+      }
+
+      .route-currency {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: #f6e5c8;
+        font-size: 24px;
+        font-weight: 800;
+      }
+
+      .arrow {
+        color: #e8ad43;
+        font-size: 34px;
+        font-weight: 900;
+      }
+
+      .modal-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 16px;
+      }
+
+      .detail-card {
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 14px;
+        background: rgba(17, 11, 6, 0.46);
+        padding: 16px;
+      }
+
+      .detail-title {
+        color: #bda988;
+        font-size: 18px;
+        font-weight: 850;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .item-summary {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 12px;
+      }
+
+      .item-summary strong {
+        display: block;
+        color: #f6e5c8;
+        font-size: 24px;
+      }
+
+      .item-summary span {
+        color: #bda988;
+        font-size: 21px;
+      }
+
+      .snapshot-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px 22px;
+        margin-top: 12px;
+      }
+
+      .snapshot-label {
+        color: #bda988;
+        font-size: 18px;
+      }
+
+      .snapshot-value {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+        color: #f6e5c8;
+        font-family: monospace;
+        font-size: 22px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
+      }
+
+      .trade-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .trade-card {
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 14px;
+        background: rgba(17, 11, 6, 0.46);
+        padding: 16px;
+      }
+
+      .trade-title {
+        color: #f6e5c8;
+        font-size: 23px;
+        font-weight: 850;
+      }
+
+      .input-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 12px;
+      }
+
+      .field-label {
+        color: #bda988;
+        font-size: 17px;
+      }
+
+      .field-value {
+        margin-top: 8px;
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 10px;
+        color: #f6e5c8;
+        font-family: monospace;
+        font-size: 22px;
+        font-variant-numeric: tabular-nums;
+        padding: 10px 14px;
+      }
+
+      .entered {
+        display: grid;
+        grid-template-columns: 1fr 0.9fr 0.9fr;
+        align-items: center;
+        gap: 18px;
+        border: 1px solid rgba(122, 85, 38, 0.72);
+        border-radius: 14px;
+        background: rgba(232, 173, 67, 0.06);
+        padding: 16px;
+      }
+
+      .entered .big {
+        color: #e8ad43;
+        font-size: 34px;
+        font-weight: 900;
+      }
+
+      .entered-label {
+        color: #bda988;
+        font-size: 17px;
+      }
+
+      .entered-value {
+        margin-top: 8px;
+        color: #f6e5c8;
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      .cta-content {
+        align-items: center;
+        text-align: center;
+      }
+
+      .cta-content .headline {
+        max-width: 1180px;
+      }
+
+      .domain {
+        display: inline-flex;
+        align-items: center;
+        gap: 18px;
+        border: 1px solid rgba(232, 173, 67, 0.44);
+        border-radius: 999px;
+        background: rgba(232, 173, 67, 0.1);
+        color: #f6e5c8;
+        font-size: 34px;
+        font-weight: 850;
+        padding: 18px 28px;
+      }
+
+      .domain-dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #78d894;
+        box-shadow: 0 0 24px rgba(120, 216, 148, 0.72);
+      }
+
+      .icon-row {
+        display: flex;
+        gap: 18px;
+      }
+
+      .wipe {
+        z-index: 10;
+        transform-origin: left center;
+        background: #e8ad43;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="18"
+      data-width="1920"
+      data-height="1080"
+    >
+      <section
+        id="scene-1"
+        class="clip scene"
+        data-start="0"
+        data-duration="4.4"
+        data-track-index="0"
+        data-layout-allow-occlusion
+      >
+        <div class="grain" data-layout-ignore></div>
+        <div class="orb orb-a" data-layout-ignore></div>
+        <div class="orb orb-b" data-layout-ignore></div>
+        <div class="scene-content split">
+          <div>
+            <div class="eyebrow">交易前先確認</div>
+            <h1 class="headline">最佳買入。</h1>
+            <p class="subhead">選擇目標，比較三種通貨成本。</p>
+          </div>
+          <div class="shell best-buy-panel">
+            <div class="search-row">
+              <div class="search-box">
+                <img class="icon" src="assets/icons/vaal-orb.webp" alt="" />
+                <span>瓦爾寶珠 [通貨]</span>
+              </div>
+              <div class="toggle">顯示賣出</div>
+            </div>
+            <div class="currency-options">
+              <div class="currency-card best">
+                <div class="card-top">
+                  <div class="card-title"><img class="icon" src="assets/icons/chaos-orb.webp" alt="" />混沌石</div>
+                  <span class="gold-pill">最佳</span>
+                </div>
+                <div class="price-grid">
+                  <span>原始價格</span><span class="price-value">0.049</span>
+                  <span>崇高石成本</span><span class="price-value">4.175</span>
+                </div>
+              </div>
+              <div class="currency-card">
+                <div class="card-top">
+                  <div class="card-title"><img class="icon" src="assets/icons/divine-orb.webp" alt="" />神聖石</div>
+                </div>
+                <div class="price-grid">
+                  <span>原始價格</span><span class="price-value">0.007</span>
+                  <span>崇高石成本</span><span class="price-value">4.562</span>
+                </div>
+              </div>
+              <div class="currency-card">
+                <div class="card-top">
+                  <div class="card-title"><img class="icon" src="assets/icons/exalted-orb.webp" alt="" />崇高石</div>
+                </div>
+                <div class="price-grid">
+                  <span>原始價格</span><span class="price-value">6.959</span>
+                  <span>崇高石成本</span><span class="price-value">6.959</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="wipe-1" class="clip wipe" data-start="4.1" data-duration="0.62" data-track-index="4" data-layout-ignore></div>
+
+      <section
+        id="scene-2"
+        class="clip scene"
+        data-start="4.5"
+        data-duration="4.7"
+        data-track-index="0"
+        data-layout-allow-occlusion
+      >
+        <div class="grain" data-layout-ignore></div>
+        <div class="orb orb-a" data-layout-ignore></div>
+        <div class="scene-content">
+          <div>
+            <div class="eyebrow">接著掃描路線表</div>
+            <h2 class="headline">按 ROI 排序路線。</h2>
+          </div>
+          <div class="shell table-panel">
+            <div class="table-title">
+              <h2>最佳機會</h2>
+              <span>已索引 473 個目標</span>
+            </div>
+            <div class="market-row header">
+              <span></span><span>目標</span><span>買入</span><span>賣出</span><span>ROI</span><span>利潤</span><span>計畫</span>
+            </div>
+            <div class="market-row active">
+              <span>☆</span>
+              <div class="target-cell">
+                <img class="icon" src="assets/icons/uncut-spirit-gem-16.webp" alt="" />
+                <div><div class="target-name">未切割的精魂寶石（等級 16）</div><div class="target-meta">用崇高石買入，賣成混沌石</div></div>
+              </div>
+              <div class="mini-price"><img class="icon" src="assets/icons/exalted-orb.webp" alt="" />182.818</div>
+              <div class="mini-price"><img class="icon" src="assets/icons/chaos-orb.webp" alt="" />6.467</div>
+              <div class="roi">+198.92%</div>
+              <div class="mini-price">363.669 崇高石</div>
+              <div class="plan-button">整數批量</div>
+            </div>
+            <div class="market-row">
+              <span>☆</span>
+              <div class="target-cell">
+                <img class="icon" src="assets/icons/perfect-essence-of-haste.webp" alt="" />
+                <div><div class="target-name">完美迅捷精髓</div><div class="target-meta">用崇高石買入，賣成神聖石</div></div>
+              </div>
+              <div class="mini-price"><img class="icon" src="assets/icons/exalted-orb.webp" alt="" />22.896</div>
+              <div class="mini-price"><img class="icon" src="assets/icons/divine-orb.webp" alt="" />0.099</div>
+              <div class="roi">+191.25%</div>
+              <div class="mini-price">43.787 崇高石</div>
+              <div class="plan-button">整數批量</div>
+            </div>
+            <div class="market-row">
+              <span>☆</span>
+              <div class="target-cell">
+                <img class="icon" src="assets/icons/prismatic-alloy.webp" alt="" />
+                <div><div class="target-name">煥彩合金 [維里西姆]</div><div class="target-meta">用混沌石買入，賣成神聖石</div></div>
+              </div>
+              <div class="mini-price"><img class="icon" src="assets/icons/chaos-orb.webp" alt="" />0.524</div>
+              <div class="mini-price"><img class="icon" src="assets/icons/divine-orb.webp" alt="" />0.189</div>
+              <div class="roi">+188.27%</div>
+              <div class="mini-price">0.986 混沌石</div>
+              <div class="plan-button">整數批量</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="wipe-2" class="clip wipe" data-start="8.9" data-duration="0.62" data-track-index="4" data-layout-ignore></div>
+
+      <section
+        id="scene-3"
+        class="clip scene modal-scene"
+        data-start="9.3"
+        data-duration="5.2"
+        data-track-index="0"
+        data-layout-allow-occlusion
+      >
+        <div class="grain" data-layout-ignore></div>
+        <div class="orb orb-b" data-layout-ignore></div>
+        <div class="scene-content">
+          <div class="shell modal">
+            <div class="modal-head">
+              <div class="modal-title">交易計畫</div>
+              <div class="modal-copy">輸入遊戲內精確買入與賣出批量，再檢查真實 ROI。</div>
+            </div>
+            <div class="modal-body">
+              <div class="route-strip">
+                <div class="route-currency"><img class="icon" src="assets/icons/exalted-orb.webp" alt="" />崇高石</div>
+                <div class="arrow">↕</div>
+                <div class="route-currency"><img class="icon" src="assets/icons/chaos-orb.webp" alt="" />混沌石</div>
+              </div>
+              <div class="modal-grid">
+                <div class="detail-card">
+                  <div class="detail-title">選定目標</div>
+                  <div class="item-summary">
+                    <img class="icon icon-lg" src="assets/icons/uncut-spirit-gem-16.webp" alt="" />
+                    <div><strong>未切割的精魂寶石（等級 16）</strong><span>約 182.818 崇高石/個買入，6.467 混沌石/個賣出。</span></div>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <div class="detail-title">目前快照</div>
+                  <div class="snapshot-grid">
+                    <div><div class="snapshot-label">買入價</div><div class="snapshot-value"><img class="icon" src="assets/icons/exalted-orb.webp" alt="" />182.818</div></div>
+                    <div><div class="snapshot-label">賣出價</div><div class="snapshot-value"><img class="icon" src="assets/icons/chaos-orb.webp" alt="" />6.467</div></div>
+                    <div><div class="snapshot-label">ROI</div><div class="snapshot-value"><span class="gold-pill">+198.92%</span></div></div>
+                    <div><div class="snapshot-label">庫存</div><div class="snapshot-value">298</div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="trade-grid">
+                <div class="trade-card">
+                  <div class="trade-title">買入側交易</div>
+                  <div class="input-grid">
+                    <div><div class="field-label">支付數量 (崇高石)</div><div class="field-value">183</div></div>
+                    <div><div class="field-label">可取得</div><div class="field-value">1.00099</div></div>
+                  </div>
+                </div>
+                <div class="trade-card">
+                  <div class="trade-title">賣出側交易</div>
+                  <div class="input-grid">
+                    <div><div class="field-label">物品數量</div><div class="field-value">1</div></div>
+                    <div><div class="field-label">賣出數量 (混沌石)</div><div class="field-value">6.46667</div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="entered">
+                <div><div class="entered-label">輸入交易</div><div class="big">+198.92%</div></div>
+                <div><div class="entered-label">賣出可得</div><div class="entered-value">6.467 混沌石</div></div>
+                <div><div class="entered-label">利潤</div><div class="entered-value">363.669 崇高石</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="wipe-3" class="clip wipe" data-start="14.2" data-duration="0.62" data-track-index="4" data-layout-ignore></div>
+
+      <section
+        id="scene-4"
+        class="clip scene"
+        data-start="14.6"
+        data-duration="3.4"
+        data-track-index="0"
+        data-layout-allow-occlusion
+      >
+        <div class="grain" data-layout-ignore></div>
+        <div class="orb orb-a" data-layout-ignore></div>
+        <div class="scene-content cta-content">
+          <div class="eyebrow">POE2 Market Arbitrage Desk</div>
+          <h2 class="headline">交易前先檢查路線。</h2>
+          <div class="icon-row">
+            <img class="icon icon-lg" src="assets/icons/chaos-orb.webp" alt="" />
+            <img class="icon icon-lg" src="assets/icons/exalted-orb.webp" alt="" />
+            <img class="icon icon-lg" src="assets/icons/divine-orb.webp" alt="" />
+          </div>
+          <div class="domain"><span class="domain-dot"></span><span>poe2marketdesk.com</span></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.from("#scene-1 .eyebrow", { y: 28, opacity: 0, duration: 0.46, ease: "power3.out" }, 0.2);
+      tl.from("#scene-1 .headline", { y: 60, opacity: 0, duration: 0.64, ease: "expo.out" }, 0.42);
+      tl.from("#scene-1 .subhead", { x: -34, opacity: 0, duration: 0.5, ease: "power2.out" }, 0.82);
+      tl.from("#scene-1 .best-buy-panel", { y: 46, scale: 0.97, opacity: 0, duration: 0.58, ease: "back.out(1.25)" }, 1.08);
+      tl.from("#scene-1 .currency-card", { y: 28, opacity: 0, duration: 0.42, stagger: 0.1, ease: "power3.out" }, 1.44);
+      tl.from("#scene-1 .gold-pill", { scale: 0.82, opacity: 0, duration: 0.38, ease: "elastic.out(1, 0.55)" }, 1.78);
+
+      tl.fromTo("#wipe-1", { scaleX: 0 }, { scaleX: 1, duration: 0.32, ease: "power4.inOut" }, 4.1);
+      tl.to("#wipe-1", { scaleX: 0, transformOrigin: "right center", duration: 0.28, ease: "power3.inOut" }, 4.44);
+
+      tl.from("#scene-2 .eyebrow", { x: -46, opacity: 0, duration: 0.42, ease: "power3.out" }, 4.78);
+      tl.from("#scene-2 .headline", { y: 52, opacity: 0, duration: 0.58, ease: "expo.out" }, 5.0);
+      tl.from("#scene-2 .table-panel", { y: 44, opacity: 0, scale: 0.98, duration: 0.5, ease: "back.out(1.18)" }, 5.38);
+      tl.from("#scene-2 .market-row", { x: 34, opacity: 0, duration: 0.34, stagger: 0.08, ease: "power2.out" }, 5.72);
+      tl.from("#scene-2 .active .roi", { scale: 0.84, opacity: 0, duration: 0.34, ease: "elastic.out(1, 0.6)" }, 6.18);
+      tl.from("#scene-2 .active .plan-button", { scale: 0.9, opacity: 0, duration: 0.3, ease: "power3.out" }, 6.32);
+
+      tl.fromTo("#wipe-2", { scaleX: 0 }, { scaleX: 1, duration: 0.32, ease: "power4.inOut" }, 8.9);
+      tl.to("#wipe-2", { scaleX: 0, transformOrigin: "right center", duration: 0.28, ease: "power3.inOut" }, 9.24);
+
+      tl.from("#scene-3 .modal", { y: 56, opacity: 0, scale: 0.97, duration: 0.62, ease: "back.out(1.18)" }, 9.58);
+      tl.from("#scene-3 .route-strip", { y: 22, opacity: 0, duration: 0.34, ease: "power3.out" }, 9.94);
+      tl.from("#scene-3 .detail-card", { y: 26, opacity: 0, duration: 0.34, stagger: 0.08, ease: "power2.out" }, 10.18);
+      tl.from("#scene-3 .trade-card", { y: 26, opacity: 0, duration: 0.34, stagger: 0.08, ease: "power2.out" }, 10.54);
+      tl.from("#scene-3 .entered", { scale: 0.97, opacity: 0, duration: 0.38, ease: "power3.out" }, 10.92);
+      tl.from("#scene-3 .big", { y: 18, opacity: 0, duration: 0.3, ease: "power2.out" }, 11.18);
+
+      tl.fromTo("#wipe-3", { scaleX: 0 }, { scaleX: 1, duration: 0.32, ease: "power4.inOut" }, 14.2);
+      tl.to("#wipe-3", { scaleX: 0, transformOrigin: "right center", duration: 0.28, ease: "power3.inOut" }, 14.54);
+
+      tl.from("#scene-4 .eyebrow", { y: 34, opacity: 0, duration: 0.42, ease: "power3.out" }, 14.9);
+      tl.from("#scene-4 .headline", { y: 58, opacity: 0, duration: 0.62, ease: "expo.out" }, 15.12);
+      tl.from("#scene-4 .icon-row .icon", { y: 24, opacity: 0, scale: 0.88, duration: 0.36, stagger: 0.08, ease: "back.out(1.35)" }, 15.58);
+      tl.from("#scene-4 .domain", { scale: 0.9, opacity: 0, duration: 0.42, ease: "back.out(1.4)" }, 15.92);
+      tl.to("#scene-4", { opacity: 0, duration: 0.7, ease: "sine.inOut" }, 17.25);
+
+      tl.to(".orb-a", { rotation: 14, scale: 1.04, duration: 6, repeat: 2, yoyo: true, ease: "sine.inOut" }, 0.2);
+      tl.to(".orb-b", { rotation: -10, scale: 1.05, duration: 7, repeat: 2, yoyo: true, ease: "sine.inOut" }, 0.4);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "poe2-market-refresh-dispatcher",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-02",
+  "workers_dev": true,
+  "preview_urls": false,
+  "triggers": {
+    "crons": ["17 * * * *"]
+  },
+  "vars": {
+    "GITHUB_OWNER": "Ifan24",
+    "GITHUB_REPO": "poe2-market-arbitrage-desk",
+    "GITHUB_WORKFLOW_ID": "refresh-market-data.yml",
+    "GITHUB_REF": "master"
+  }
+}

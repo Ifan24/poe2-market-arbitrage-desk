@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#000" flood-opacity="0.36"/>
+    </filter>
+    <linearGradient id="panelGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b1c0e"/>
+      <stop offset="1" stop-color="#1d130b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#15100b"/>
+  <g opacity="0.45">
+    <path d="M0 82h1200M0 164h1200M0 246h1200M0 328h1200M0 410h1200M0 492h1200M0 574h1200" stroke="rgba(246,229,200,0.035)"/>
+    <path d="M96 0v630M192 0v630M288 0v630M384 0v630M480 0v630M576 0v630M672 0v630M768 0v630M864 0v630M960 0v630M1056 0v630" stroke="rgba(246,229,200,0.03)"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="72" y="64" width="1056" height="502" rx="24" fill="url(#panelGlow)" stroke="#7a5526" stroke-width="3"/>
+    <rect x="112" y="106" width="110" height="38" rx="19" fill="#171009" stroke="rgba(122,85,38,0.75)"/>
+    <text x="137" y="132" fill="#e8ad43" font-family="Avenir Next, Segoe UI, Arial, sans-serif" font-size="19" font-weight="850" letter-spacing="2">POE2</text>
+    <text x="112" y="212" fill="#f6e5c8" font-family="Avenir Next, Segoe UI, Arial, sans-serif" font-size="62" font-weight="850">POE2 Market Arbitrage Desk</text>
+    <text x="112" y="268" fill="#bda988" font-family="Avenir Next, Segoe UI, Arial, sans-serif" font-size="28">Compare routes, round lots, ROI, stock, and gold cost.</text>
+    <rect x="112" y="346" width="976" height="136" rx="16" fill="#181008" stroke="rgba(122,85,38,0.82)" stroke-width="2"/>
+    <rect x="136" y="374" width="270" height="80" rx="14" fill="#24170d" stroke="rgba(122,85,38,0.85)"/>
+    <rect x="466" y="374" width="268" height="80" rx="14" fill="#24170d" stroke="rgba(232,173,67,0.7)"/>
+    <rect x="794" y="374" width="270" height="80" rx="14" fill="#24170d" stroke="rgba(122,85,38,0.85)"/>
+    <image href="/currency-icons/exalted-orb.webp" x="150" y="385" width="58" height="58"/>
+    <image href="/currency-icons/divine-orb.webp" x="808" y="385" width="58" height="58"/>
+    <text x="218" y="425" fill="#f6e5c8" font-family="Avenir Next, Segoe UI, Arial, sans-serif" font-size="27" font-weight="750">Exalted Orb</text>
+    <text x="876" y="425" fill="#f6e5c8" font-family="Avenir Next, Segoe UI, Arial, sans-serif" font-size="27" font-weight="750">Divine Orb</text>
+    <path d="M546 414h108" stroke="#e8ad43" stroke-width="8" stroke-linecap="round"/>
+    <path d="m626 384 32 30-32 30" fill="none" stroke="#e8ad43" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m574 444-32-30 32-30" fill="none" stroke="#e8ad43" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="112" y="506" width="188" height="32" rx="16" fill="#e8ad43"/>
+    <text x="136" y="529" fill="#171009" font-family="Avenir Next, Segoe UI, Arial, sans-serif" font-size="20" font-weight="850">+136.68% ROI</text>
+    <text x="332" y="529" fill="#78d894" font-family="Menlo, SFMono-Regular, monospace" font-size="20" font-weight="700">197 profitable rows</text>
+    <text x="766" y="529" fill="#bda988" font-family="Avenir Next, Segoe UI, Arial, sans-serif" font-size="20">Plan before trading</text>
+  </g>
+</svg>
