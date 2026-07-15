@@ -124,7 +124,19 @@ test("complete locale pages translate visible app copy", () => {
     "improvingNow",
     "strongestFlow",
     "storeValue",
-    "viewRankedRoutes"
+    "viewRankedRoutes",
+    "landingHelperTitle",
+    "landingHelperDescription",
+    "landingHelperAction",
+    "landingHelperDismiss",
+    "landingGuideTitle",
+    "landingGuideScan",
+    "landingGuideFilter",
+    "landingGuidePlan",
+    "landingGuideVerify",
+    "landingGuideFreshness",
+    "landingGuideDisclaimer",
+    "landingGuideSource"
   ];
   const allowedSharedCopy = {
     fr: new Set(["stockFilter"])

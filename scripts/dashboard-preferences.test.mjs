@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   DASHBOARD_STORAGE_KEY,
+  LANDING_HELPER_STORAGE_KEY,
   loadDashboardPreferences,
+  loadLandingHelperDismissed,
+  saveLandingHelperDismissed,
   saveDashboardPreferences
 } from "../lib/dashboard-preferences.ts";
 
@@ -50,4 +53,31 @@ test("dashboard preferences clear corrupt saved data", () => {
   const storage = createStorage({ [DASHBOARD_STORAGE_KEY]: "not-json" });
   assert.equal(loadDashboardPreferences(storage), null);
   assert.equal(storage.getItem(DASHBOARD_STORAGE_KEY), null);
+});
+
+test("landing helper dismissal uses an independent versioned preference", () => {
+  const storage = createStorage();
+  assert.equal(loadLandingHelperDismissed(storage), false);
+
+  saveLandingHelperDismissed(storage);
+
+  assert.equal(storage.getItem(LANDING_HELPER_STORAGE_KEY), "1");
+  assert.equal(loadLandingHelperDismissed(storage), true);
+  assert.equal(storage.getItem(DASHBOARD_STORAGE_KEY), null);
+});
+
+test("landing helper dismissal safely degrades when storage is unavailable", () => {
+  const unavailableStorage = {
+    getItem() {
+      throw new Error("storage unavailable");
+    },
+    setItem() {
+      throw new Error("storage unavailable");
+    },
+    removeItem() {}
+  };
+
+  assert.equal(loadLandingHelperDismissed(unavailableStorage), false);
+  assert.doesNotThrow(() => saveLandingHelperDismissed(unavailableStorage));
+  assert.equal(loadLandingHelperDismissed(unavailableStorage), true);
 });

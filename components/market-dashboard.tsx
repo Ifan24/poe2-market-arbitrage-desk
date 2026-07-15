@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ComponentType, SVGProps } from "react";
 import { toast } from "sonner";
 
+import { LandingHelperToast } from "@/components/landing-helper-toast";
 import {
   CategoryBadge,
   CategoryIcon,
@@ -1136,6 +1137,7 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
                 )}
               </div>
             </div>
+            <LandingHelperToast t={t} />
             {productionDataUnavailable ? (
               <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 Market data could not be loaded. Please try refreshing the page.

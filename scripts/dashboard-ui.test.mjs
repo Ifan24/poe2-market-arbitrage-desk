@@ -7,6 +7,7 @@ import { getLocaleFromAcceptLanguage, getSupportedLocale } from "../lib/locale.t
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dashboard = fs.readFileSync(path.join(__dirname, "..", "components", "market-dashboard.tsx"), "utf8");
+const landingHelper = fs.readFileSync(path.join(__dirname, "..", "components", "landing-helper-toast.tsx"), "utf8");
 const dashboardPreferences = fs.readFileSync(path.join(__dirname, "..", "lib", "dashboard-preferences.ts"), "utf8");
 const marketArbitrage = fs.readFileSync(path.join(__dirname, "..", "lib", "market-arbitrage.ts"), "utf8");
 const dashboardModel = fs.readFileSync(path.join(__dirname, "..", "lib", "dashboard-model.ts"), "utf8");
@@ -70,6 +71,19 @@ test("dashboard renders through the shadcn React surface", () => {
   assert.match(dashboard, /@\/components\/ui\/tabs/);
   assert.match(dashboard, /@\/components\/ui\/table/);
   assert.match(dashboard, /@\/components\/ui\/select/);
+  assert.match(dashboard, /<LandingHelperToast t=\{t\} \/>/);
+});
+
+test("dashboard landing help uses one persistent, explicit Sonner prompt", () => {
+  assert.match(landingHelper, /toast\.custom/);
+  assert.match(landingHelper, /LANDING_HELPER_TOAST_ID/);
+  assert.match(landingHelper, /position: "bottom-right"/);
+  assert.match(landingHelper, /duration: Infinity/);
+  assert.match(landingHelper, /dismissible: false/);
+  assert.match(landingHelper, /saveLandingHelperDismissed/);
+  assert.match(landingHelper, /<Dialog open=\{guideOpen\}/);
+  assert.match(landingHelper, /https:\/\/github\.com\/Ifan24\/poe2-market-arbitrage-desk/);
+  assert.doesNotMatch(landingHelper, /<Toaster/);
 });
 
 test("localized dashboard routes stay statically renderable", () => {
