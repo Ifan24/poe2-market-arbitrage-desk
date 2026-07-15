@@ -41,12 +41,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-On macOS, you can also run:
-
-```bash
-./start-mac.sh
-```
-
 ## Common Commands
 
 ```bash

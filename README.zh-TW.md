@@ -41,12 +41,6 @@ npm run dev
 
 開啟 [http://localhost:3000](http://localhost:3000)。
 
-在 macOS 也可以執行：
-
-```bash
-./start-mac.sh
-```
-
 ## 常用指令
 
 ```bash
