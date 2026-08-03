@@ -25,6 +25,10 @@ const marketRouteDetailPage = fs.readFileSync(path.join(__dirname, "..", "compon
 const marketDisplayPolicy = fs.readFileSync(path.join(__dirname, "..", "lib", "market-display-policy.ts"), "utf8");
 const sonner = fs.readFileSync(path.join(__dirname, "..", "components", "ui", "sonner.tsx"), "utf8");
 const marketLocale = fs.readFileSync(path.join(__dirname, "..", "lib", "market-locale.ts"), "utf8");
+const marketRefreshSchedule = fs.readFileSync(
+  path.join(__dirname, "..", "lib", "market-refresh-schedule.ts"),
+  "utf8"
+);
 const packageSource = fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8");
 const updatePoe2Scout = fs.readFileSync(path.join(__dirname, "..", "scripts", "update-poe2scout-data.mjs"), "utf8");
 const updatePoe2dbIcons = fs.readFileSync(path.join(__dirname, "..", "scripts", "update-poe2db-icons.mjs"), "utf8");
@@ -252,13 +256,14 @@ test("dashboard keeps market refresh out of the hosted UI", () => {
   assert.match(dashboard, /targetsIndexed/);
 });
 
-test("dashboard reminds stale tabs around the hourly snapshot refresh window", () => {
+test("dashboard reminds stale tabs around the six-hour snapshot refresh window", () => {
   assert.match(refreshWorkflow, /workflow_dispatch:/);
   assert.doesNotMatch(refreshWorkflow, /schedule:/);
-  assert.match(cloudflareRefreshDispatcher, /"crons": \["17 \* \* \* \*"\]/);
-  assert.match(dashboard, /HOURLY_REFRESH_MINUTE = 17/);
-  assert.match(dashboard, /SNAPSHOT_PROMPT_GRACE_MINUTES = 5/);
-  assert.match(dashboard, /shouldShowHourlySnapshotReminder/);
+  assert.match(cloudflareRefreshDispatcher, /"crons": \["17 \*\/6 \* \* \*"\]/);
+  assert.match(marketRefreshSchedule, /MARKET_REFRESH_INTERVAL_HOURS = 6/);
+  assert.match(marketRefreshSchedule, /MARKET_REFRESH_MINUTE = 17/);
+  assert.match(marketRefreshSchedule, /SNAPSHOT_PROMPT_GRACE_MINUTES = 5/);
+  assert.match(dashboard, /shouldShowScheduledSnapshotReminder/);
   assert.match(dashboard, /loadDismissedSnapshotReminderSlot/);
   assert.match(dashboard, /saveDismissedSnapshotReminderSlot/);
   assert.match(dashboard, /toast\(t\.newSnapshotAvailable/);

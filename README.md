@@ -109,17 +109,17 @@ This baseline is committed at most once per day. It is not the live market sourc
 
 On Vercel, runtime writes to `public/` are not durable. Runtime refresh is disabled by default everywhere and requires both `MARKET_REFRESH_ALLOW_RUNTIME_WRITE=1` and a valid `MARKET_REFRESH_TOKEN` on an explicitly writable trusted runtime. The recommended public path is:
 
-1. Refresh hourly market data through the dispatched workflow and upload it to the public data host.
+1. Refresh market data every six hours through the dispatched workflow and upload it to the public data host.
 2. Refresh and commit `public/market-baseline.json` with the daily baseline workflow.
 3. Let Vercel deploy app code and daily baseline changes only.
 
-This repo includes `.github/workflows/refresh-market-data.yml`, which refreshes the market data when dispatched and uploads generated artifacts to the public data host. Hourly scheduling is handled by the Cloudflare Worker in `cloudflare/market-refresh-dispatcher`, which calls GitHub's workflow dispatch API at minute 17.
+This repo includes `.github/workflows/refresh-market-data.yml`, which refreshes the market data when dispatched and uploads generated artifacts to the public data host. Six-hour scheduling is handled by the Cloudflare Worker in `cloudflare/market-refresh-dispatcher`, which calls GitHub's workflow dispatch API at 00:17, 06:17, 12:17, and 18:17 UTC.
 
 This repo also includes `.github/workflows/refresh-market-baseline.yml`, which refreshes and commits only `public/market-baseline.json` once per day.
 
 ### Trend Index Retention
 
-The refresh path keeps a league-scoped history index for the active economy. The index stores recent hourly snapshot keys only, not duplicate full market payloads. Trend generation reads the bounded seven-day history needed for the supported 24h and 7d persistence windows.
+The refresh path keeps a league-scoped history index for the active economy. The index stores recent scheduled snapshot keys only, not duplicate full market payloads. Trend generation reads the bounded seven-day history needed for the supported 24h and 7d persistence windows.
 
 When a league ends, its historical objects become legacy research data. They should not be mixed into the next league's current trading signals. A new league should write to a new league path, and old league data can remain archived for later study.
 

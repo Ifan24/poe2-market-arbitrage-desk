@@ -117,6 +117,10 @@ import {
   formatTag,
   type UiText
 } from "@/lib/market-locale";
+import {
+  getScheduledSnapshotRefreshSlot,
+  shouldShowScheduledSnapshotReminder
+} from "@/lib/market-refresh-schedule";
 import { cn } from "@/lib/utils";
 
 type DashboardProps = {
@@ -128,51 +132,15 @@ type DashboardProps = {
 const PAGE_SIZE = 18;
 const ALL_ROUTE_KEY = "all-routes";
 const MARKET_VALUE_DIGITS = 3;
-const HOURLY_REFRESH_MINUTE = 17;
-const SNAPSHOT_PROMPT_GRACE_MINUTES = 5;
 const SNAPSHOT_REMINDER_CHECK_INTERVAL_MS = 60 * 1000;
 const SNAPSHOT_REMINDER_TOAST_ID = "snapshot-refresh-reminder";
-
-function getHourlySnapshotRefreshSlot(now = new Date()) {
-  const scheduledRefreshAt = new Date(now);
-  scheduledRefreshAt.setMinutes(HOURLY_REFRESH_MINUTE, 0, 0);
-  return scheduledRefreshAt.toISOString();
-}
-
-function shouldShowHourlySnapshotReminder(
-  importedAt: string | undefined,
-  dismissedSlot: string,
-  now = new Date()
-) {
-  const promptMinute = HOURLY_REFRESH_MINUTE + SNAPSHOT_PROMPT_GRACE_MINUTES;
-  const scheduledRefreshAt = new Date(now);
-  scheduledRefreshAt.setMinutes(HOURLY_REFRESH_MINUTE, 0, 0);
-
-  const promptAt = new Date(now);
-  promptAt.setMinutes(promptMinute, 0, 0);
-
-  if (now < promptAt) {
-    return false;
-  }
-
-  if (dismissedSlot === scheduledRefreshAt.toISOString()) {
-    return false;
-  }
-
-  if (!importedAt) {
-    return true;
-  }
-
-  const importedAtMs = Date.parse(importedAt);
-  return Number.isNaN(importedAtMs) || importedAtMs < scheduledRefreshAt.getTime();
-}
 
 function SnapshotUpdatePrompt({ importedAt, t }: { importedAt?: string; t: UiText }) {
   const [dismissedSlot, setDismissedSlot] = useState(() => loadDismissedSnapshotReminderSlot());
 
   useEffect(() => {
     function checkRefreshWindow() {
-      if (!shouldShowHourlySnapshotReminder(importedAt, dismissedSlot)) {
+      if (!shouldShowScheduledSnapshotReminder(importedAt, dismissedSlot)) {
         toast.dismiss(SNAPSHOT_REMINDER_TOAST_ID);
         return;
       }
@@ -184,7 +152,7 @@ function SnapshotUpdatePrompt({ importedAt, t }: { importedAt?: string; t: UiTex
         action: {
           label: t.refreshPage,
           onClick: () => {
-            const slot = getHourlySnapshotRefreshSlot();
+            const slot = getScheduledSnapshotRefreshSlot();
             saveDismissedSnapshotReminderSlot(slot);
             setDismissedSlot(slot);
             window.location.reload();

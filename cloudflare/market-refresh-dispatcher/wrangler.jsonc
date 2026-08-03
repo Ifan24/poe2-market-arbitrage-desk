@@ -6,7 +6,7 @@
   "workers_dev": true,
   "preview_urls": false,
   "triggers": {
-    "crons": ["17 * * * *"]
+    "crons": ["17 */6 * * *"]
   },
   "vars": {
     "GITHUB_OWNER": "Ifan24",
