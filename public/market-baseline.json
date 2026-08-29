@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "role": "baseline",
-  "generatedAt": "2026-08-29T01:09:45.434Z",
+  "generatedAt": "2026-08-29T19:59:01.076Z",
   "league": "Runes of Aldur",
   "source": "poe2scout",
   "categories": [
@@ -13614,7 +13614,7 @@
       }
     ],
     "importedFrom": "poe2scout Runes of Aldur official exchange snapshot",
-    "importedAt": "2026-08-29T01:09:45.434Z",
+    "importedAt": "2026-08-29T19:59:01.076Z",
     "filters": {
       "minTradeValueDivine": 50,
       "minStock": 200,
