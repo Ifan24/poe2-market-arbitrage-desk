@@ -39,7 +39,8 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { MarketData, MarketItem } from "@/lib/market-data";
-import type { MarketDataManifest, MarketDataSourceConfig } from "@/lib/market-data-source";
+import type { MarketDataSourceConfig } from "@/lib/market-data-source";
+import { loadMarketDataBundle, useSelectedLeagueId } from "@/lib/market-data-client";
 import { normalizeFilters, type MarketFilters } from "@/lib/market-arbitrage";
 import type { Locale } from "@/lib/locale";
 import { getTrendRouteHref } from "@/lib/trend-route-links";
@@ -71,17 +72,6 @@ type MarketTrendsPageProps = {
   dataSource: MarketDataSourceConfig;
 };
 
-function resolveRemoteUrl(baseUrl: string, pathOrUrl: string) {
-  return new URL(pathOrUrl, `${baseUrl.replace(/\/+$/, "")}/`).toString();
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
-  }
-  return response.json() as Promise<T>;
-}
 
 function useIsMobileLayout() {
   const [isMobileLayout, setIsMobileLayout] = useState<boolean | null>(null);
@@ -637,6 +627,7 @@ function LocalSnapshotTime({
 
 export function MarketTrendsPage({ initialData, initialLocale, dataSource }: MarketTrendsPageProps) {
   const [marketData, setMarketData] = useState(initialData);
+  const selectedLeagueId = useSelectedLeagueId();
   const [trendIndex, setTrendIndex] = useState<MarketTrendIndex | null>(null);
   const [trendError, setTrendError] = useState("");
   const [remoteError, setRemoteError] = useState("");
@@ -661,12 +652,11 @@ export function MarketTrendsPage({ initialData, initialLocale, dataSource }: Mar
 
     async function loadRemoteData() {
       try {
-        const manifest = await fetchJson<MarketDataManifest>(resolveRemoteUrl(dataSource.baseUrl, dataSource.manifestPath));
-        const snapshotUrl = resolveRemoteUrl(dataSource.baseUrl, manifest.snapshot.url);
-        const [snapshot, trend] = await Promise.all([
-          fetchJson<MarketData>(snapshotUrl),
-          fetchJson<MarketTrendIndex>(resolveRemoteUrl(dataSource.baseUrl, dataSource.trendIndexPath)).catch(() => null)
-        ]);
+        const { snapshot, trend } = await loadMarketDataBundle(dataSource, {
+          signal: abortController.signal,
+          preferredLeagueId: selectedLeagueId,
+          includeTrend: true
+        });
 
         if (abortController.signal.aborted) {
           return;
@@ -674,6 +664,7 @@ export function MarketTrendsPage({ initialData, initialLocale, dataSource }: Mar
 
         setMarketData(snapshot);
         setTrendIndex(trend);
+        setSelectedRow(null);
         setTrendError(trend ? "" : t.trendDataUnavailable);
         setRemoteError("");
       } catch (error) {
@@ -690,7 +681,7 @@ export function MarketTrendsPage({ initialData, initialLocale, dataSource }: Mar
     return () => {
       abortController.abort();
     };
-  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.trendIndexPath, t.noSnapshot, t.trendDataUnavailable]);
+  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.trendIndexPath, selectedLeagueId, t.noSnapshot, t.trendDataUnavailable]);
 
   const allRows = useMemo(
     () => buildTrendRows(marketData.state, trendIndex, marketFilters),
@@ -757,7 +748,7 @@ export function MarketTrendsPage({ initialData, initialLocale, dataSource }: Mar
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="bg-background/35">POE2</Badge>
-                <Badge variant="secondary">{marketData.league || trendIndex?.league.name || "Runes of Aldur"}</Badge>
+                <Badge variant="secondary">{marketData.league || trendIndex?.league.name || "..."}</Badge>
               </div>
               <h1 className="mt-3 text-2xl font-semibold tracking-normal sm:text-3xl">{t.trends}</h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">

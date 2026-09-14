@@ -15,7 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { buildAppreciationRows, filterAppreciationRows } from "@/lib/appreciation-model";
 import type { Locale } from "@/lib/locale";
 import type { MarketData } from "@/lib/market-data";
-import type { MarketDataManifest, MarketDataSourceConfig } from "@/lib/market-data-source";
+import type { MarketDataSourceConfig } from "@/lib/market-data-source";
+import { loadMarketDataBundle, useSelectedLeagueId } from "@/lib/market-data-client";
 import {
   UI_TEXT,
   formatDate,
@@ -33,17 +34,6 @@ type MarketAppreciationPageProps = {
   dataSource: MarketDataSourceConfig;
 };
 
-function resolveRemoteUrl(baseUrl: string, pathOrUrl: string) {
-  return new URL(pathOrUrl, `${baseUrl.replace(/\/+$/, "")}/`).toString();
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
-  }
-  return response.json() as Promise<T>;
-}
 
 function LocalSnapshotTime({ value, locale, t }: { value: string | undefined; locale: Locale; t: UiText }) {
   const [label, setLabel] = useState("");
@@ -117,6 +107,7 @@ function PriceSparkline({
 
 export function MarketAppreciationPage({ initialData, initialLocale, dataSource }: MarketAppreciationPageProps) {
   const [marketData, setMarketData] = useState(initialData);
+  const selectedLeagueId = useSelectedLeagueId();
   const [trendIndex, setTrendIndex] = useState<MarketTrendIndex | null>(null);
   const [remoteError, setRemoteError] = useState("");
   const [locale, setLocale] = useState<Locale>(initialLocale);
@@ -138,12 +129,11 @@ export function MarketAppreciationPage({ initialData, initialLocale, dataSource 
 
     async function loadRemoteData() {
       try {
-        const manifest = await fetchJson<MarketDataManifest>(resolveRemoteUrl(dataSource.baseUrl, dataSource.manifestPath));
-        const snapshotUrl = resolveRemoteUrl(dataSource.baseUrl, manifest.snapshot.url);
-        const [snapshot, trend] = await Promise.all([
-          fetchJson<MarketData>(snapshotUrl),
-          fetchJson<MarketTrendIndex>(resolveRemoteUrl(dataSource.baseUrl, dataSource.trendIndexPath)).catch(() => null)
-        ]);
+        const { snapshot, trend } = await loadMarketDataBundle(dataSource, {
+          signal: abortController.signal,
+          preferredLeagueId: selectedLeagueId,
+          includeTrend: true
+        });
 
         if (abortController.signal.aborted) {
           return;
@@ -164,7 +154,7 @@ export function MarketAppreciationPage({ initialData, initialLocale, dataSource 
     loadRemoteData();
 
     return () => abortController.abort();
-  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.trendIndexPath, t.noSnapshot]);
+  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.trendIndexPath, selectedLeagueId, t.noSnapshot]);
 
   const allRows = useMemo(
     () => buildAppreciationRows(trendIndex?.appreciation, marketData.state.items),
@@ -183,7 +173,7 @@ export function MarketAppreciationPage({ initialData, initialLocale, dataSource 
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="bg-background/35">POE2</Badge>
-                <Badge variant="secondary">{marketData.league || trendIndex?.league.name || "Runes of Aldur"}</Badge>
+                <Badge variant="secondary">{marketData.league || trendIndex?.league.name || "..."}</Badge>
               </div>
               <h1 className="mt-3 text-2xl font-semibold tracking-normal sm:text-3xl">{t.storeValue}</h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">

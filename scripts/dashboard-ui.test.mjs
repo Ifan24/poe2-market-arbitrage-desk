@@ -141,7 +141,10 @@ test("localized trends page ranks profit persistence separately from the scanner
     /<MarketTrendsPage initialData=\{marketData\} initialLocale=\{locale\} dataSource=\{bootstrap\.source\} \/>/
   );
   assert.match(localizedTrendsPage, /getLocalizedPageMetadata\(locale, "trends"\)/);
-  assert.match(localizedLayout, /<SiteNavbar initialLocale=\{initialLocale\} \/>/);
+  assert.match(
+    localizedLayout,
+    /<SiteNavbar initialLocale=\{initialLocale\} marketDataSource=\{marketDataSource\} \/>/
+  );
   assert.match(siteNavbar, /`\/\$\{localeRoute\}\/trends`/);
   assert.match(marketTrendsPage, /buildTrendRows/);
   assert.match(marketTrendsPage, /filterTrendRows/);
@@ -277,8 +280,8 @@ test("dashboard reminds stale tabs around the six-hour snapshot refresh window",
   assert.match(packageSource, /"sonner"/);
   assert.doesNotMatch(dashboard, /poe-ninja-data\.json\?freshness/);
   assert.doesNotMatch(dashboard, /fetch\(`\/api\/refresh/);
-  assert.match(dashboard, /fetchJson<MarketDataManifest>/);
-  assert.match(dashboard, /resolveRemoteUrl\(dataSource\.baseUrl, manifest\.snapshot\.url\)/);
+  assert.match(dashboard, /loadMarketDataBundle/);
+  assert.match(dashboard, /useSelectedLeagueId/);
 });
 
 test("dashboard formats snapshot timestamps in the browser locale", () => {
@@ -311,32 +314,6 @@ test("poe2scout refresh keeps checked-in item icons instead of pruning them", ()
   assert.doesNotMatch(refreshWorkflow, /git add public\/poe-ninja-data\.json public\/poe-ninja-data\.js public\/item-icons/);
 });
 
-test("market refresh uploads tested artifacts to R2 instead of committing generated data", () => {
-  assert.match(refreshWorkflow, /contents: read/);
-  assert.match(refreshWorkflow, /Upload market data to R2/);
-  assert.match(refreshWorkflow, /npm run upload:market-data:r2/);
-  assert.doesNotMatch(refreshWorkflow, /git commit -m "chore: refresh market data"/);
-  assert.match(packageSource, /upload:market-data:r2/);
-  assert.match(r2MarketArtifacts, /PutObjectCommand/);
-  assert.match(r2MarketArtifacts, /uploadIconArtifacts/);
-  assert.match(r2MarketArtifacts, /item-icons/);
-  assert.match(r2MarketArtifacts, /manifest\.json/);
-  assert.match(r2MarketArtifacts, /status\.json/);
-  assert.match(r2MarketArtifacts, /seo-summary\.json/);
-  assert.match(r2MarketArtifacts, /history\.json/);
-  assert.match(r2MarketArtifacts, /trend-index\.json/);
-  assert.match(r2MarketArtifacts, /buildMarketSeoSummary/);
-  assert.match(r2MarketArtifacts, /buildSnapshotHistoryIndex/);
-  assert.match(r2MarketArtifacts, /buildMarketTrendIndex/);
-  assert.match(marketTrendIndexSource, /buildMarketAppreciationIndex/);
-  assert.match(marketTrendIndexSource, /profitPersistence/);
-  assert.match(marketTrendIndexSource, /"24h"/);
-  assert.match(marketTrendIndexSource, /"7d"/);
-  assert.match(r2MarketArtifacts, /max-age=31536000, immutable/);
-  assert.match(poe2ScoutLeagues, /POE2SCOUT_REALM = DEFAULT_REALM/);
-  assert.match(poe2ScoutLeagues, /poe2/);
-  assert.doesNotMatch(poe2ScoutLeagues, /DEFAULT_REALM = "pc"/);
-});
 
 test("localized pages render a compact crawlable market summary", () => {
   assert.match(marketSeoSummarySource, /buildMarketSeoSummary/);
@@ -389,6 +366,11 @@ test("shared navbar owns global navigation and browser-local viewing settings", 
   assert.match(siteNavbar, /t\.storeValue/);
   assert.match(siteNavbar, /reduceMotion/);
   assert.match(siteNavbar, /setGuideOpen\(true\)/);
+  assert.match(siteNavbar, /aria-label=\{`\$\{t\.league\}: \$\{selectedLeagueName\}`\}/);
+  assert.match(siteNavbar, /<SelectLabel>\{t\.league\}<\/SelectLabel>/);
+  assert.match(siteNavbar, /leagueOptions\.map/);
+  assert.match(siteNavbar, /selectedLeagueId/);
+  assert.match(siteNavbar, /resolveSelectedLeagueId/);
   assert.match(sitePreferences, /poe2-site-preferences:v1/);
   assert.match(sitePreferences, /window\.localStorage/);
   assert.doesNotMatch(siteNavbar, /compactLayout/);

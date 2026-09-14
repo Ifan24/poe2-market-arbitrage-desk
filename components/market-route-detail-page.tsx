@@ -27,7 +27,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getIntegerRoiRows } from "@/lib/market-arbitrage";
 import { getLocaleRoute, type Locale } from "@/lib/locale";
 import type { MarketData } from "@/lib/market-data";
-import type { MarketDataManifest, MarketDataSourceConfig } from "@/lib/market-data-source";
+import type { MarketDataSourceConfig } from "@/lib/market-data-source";
+import { loadMarketDataBundle, useSelectedLeagueId } from "@/lib/market-data-client";
 import {
   UI_TEXT,
   formatDate,
@@ -54,17 +55,6 @@ const roiChartConfig = {
   }
 } satisfies ChartConfig;
 
-function resolveRemoteUrl(baseUrl: string, pathOrUrl: string) {
-  return new URL(pathOrUrl, `${baseUrl.replace(/\/+$/, "")}/`).toString();
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
-  }
-  return response.json() as Promise<T>;
-}
 
 function LocalSnapshotTime({ value, locale, t }: { value: string | undefined; locale: Locale; t: UiText }) {
   const [label, setLabel] = useState("");
@@ -211,6 +201,7 @@ function RouteLoading({ t }: { t: UiText }) {
 
 export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, routeKey }: MarketRouteDetailPageProps) {
   const [marketData, setMarketData] = useState(initialData);
+  const selectedLeagueId = useSelectedLeagueId();
   const [trendIndex, setTrendIndex] = useState<MarketTrendIndex | null>(null);
   const [remoteError, setRemoteError] = useState("");
   const [locale, setLocale] = useState<Locale>(initialLocale);
@@ -232,12 +223,11 @@ export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, 
 
     async function loadRemoteData() {
       try {
-        const manifest = await fetchJson<MarketDataManifest>(resolveRemoteUrl(dataSource.baseUrl, dataSource.manifestPath));
-        const snapshotUrl = resolveRemoteUrl(dataSource.baseUrl, manifest.snapshot.url);
-        const [snapshot, trend] = await Promise.all([
-          fetchJson<MarketData>(snapshotUrl),
-          fetchJson<MarketTrendIndex>(resolveRemoteUrl(dataSource.baseUrl, dataSource.trendIndexPath)).catch(() => null)
-        ]);
+        const { snapshot, trend } = await loadMarketDataBundle(dataSource, {
+          signal: abortController.signal,
+          preferredLeagueId: selectedLeagueId,
+          includeTrend: true
+        });
 
         if (abortController.signal.aborted) {
           return;
@@ -260,7 +250,7 @@ export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, 
     return () => {
       abortController.abort();
     };
-  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.trendIndexPath, t.noSnapshot]);
+  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.trendIndexPath, selectedLeagueId, t.noSnapshot]);
 
   const row = useMemo(() => getTrendRouteRow(marketData.state, trendIndex, routeKey), [marketData.state, routeKey, trendIndex]);
   const latestDate = trendIndex?.generatedAt || marketData.state.importedAt;
@@ -296,7 +286,7 @@ export function MarketRouteDetailPage({ initialData, initialLocale, dataSource, 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="bg-background/35">POE2</Badge>
-                <Badge variant="secondary">{marketData.league || trendIndex?.league.name || "Runes of Aldur"}</Badge>
+                <Badge variant="secondary">{marketData.league || trendIndex?.league.name || "..."}</Badge>
                 <Badge variant="outline">{t.routeDetailPage}</Badge>
               </div>
               <div className="mt-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">

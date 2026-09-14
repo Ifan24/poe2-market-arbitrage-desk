@@ -13,7 +13,8 @@ import {
   RouteIcon,
   RotateCcwIcon,
   Settings2Icon,
-  TrendingUpIcon
+  TrendingUpIcon,
+  TrophyIcon
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -48,11 +49,14 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { getLocaleFromRoute, getLocaleRoute, replaceLocaleInPath, type Locale } from "@/lib/locale";
 import { LOCALE_OPTIONS, LOCALE_TRIGGER_LABELS, UI_TEXT } from "@/lib/market-locale";
+import { resolveMarketDataUrl, resolveSelectedLeagueId } from "@/lib/market-data-client";
+import type { MarketDataManifest, MarketDataSourceConfig } from "@/lib/market-data-source";
 import {
   applySitePreferences,
   DEFAULT_SITE_PREFERENCES,
   loadSitePreferences,
   saveSitePreferences,
+  subscribeSitePreferences,
   type SitePreferences
 } from "@/lib/site-preferences";
 
@@ -105,7 +109,13 @@ function PreferenceRow({ icon: Icon, label, hint, checked, onCheckedChange }: { 
   );
 }
 
-export function SiteNavbar({ initialLocale }: { initialLocale: Locale }) {
+export function SiteNavbar({
+  initialLocale,
+  marketDataSource
+}: {
+  initialLocale: Locale;
+  marketDataSource: MarketDataSourceConfig;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const locale = getPathLocale(pathname, initialLocale);
@@ -115,6 +125,7 @@ export function SiteNavbar({ initialLocale }: { initialLocale: Locale }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [preferences, setPreferences] = useState<SitePreferences>(DEFAULT_SITE_PREFERENCES);
+  const [manifest, setManifest] = useState<MarketDataManifest | null>(null);
 
   const navItems = useMemo(() => [
     { href: `/${localeRoute}`, label: t.scanner, icon: LayoutDashboardIcon, active: pathname === `/${localeRoute}` },
@@ -122,11 +133,63 @@ export function SiteNavbar({ initialLocale }: { initialLocale: Locale }) {
     { href: `/${localeRoute}/store-value`, label: t.storeValue, icon: TrendingUpIcon, active: pathname.startsWith(`/${localeRoute}/store-value`) }
   ], [localeRoute, pathname, t.scanner, t.storeValue, t.trends]);
 
-  useEffect(() => {
-    const saved = loadSitePreferences();
+  useEffect(() => subscribeSitePreferences((saved) => {
     setPreferences(saved);
     applySitePreferences(saved);
-  }, []);
+  }), []);
+
+  useEffect(() => {
+    if (!marketDataSource.baseUrl) return;
+    let active = true;
+    const controller = new AbortController();
+    const manifestUrl = resolveMarketDataUrl(marketDataSource.baseUrl, marketDataSource.manifestPath);
+
+    async function loadManifest() {
+      try {
+        const response = await fetch(manifestUrl, {
+          cache: "no-store",
+          signal: controller.signal
+        });
+        if (!response.ok) return;
+        const root = (await response.json()) as MarketDataManifest;
+        if (!active) return;
+        setManifest(root);
+
+        const currentPrefs = loadSitePreferences();
+        const resolvedId = resolveSelectedLeagueId(root, currentPrefs.selectedLeagueId);
+        if (currentPrefs.selectedLeagueId !== resolvedId) {
+          const updated = { ...currentPrefs, selectedLeagueId: resolvedId };
+          setPreferences(updated);
+          saveSitePreferences(updated);
+        }
+      } catch {
+        // Keep in-session UI usable when fetch fails or is aborted.
+      }
+    }
+
+    loadManifest();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [marketDataSource.baseUrl, marketDataSource.manifestPath]);
+
+  const leagueOptions = useMemo(() => {
+    if (manifest?.availableLeagues && manifest.availableLeagues.length > 0) {
+      return manifest.availableLeagues
+        .filter((league) => !league.hardcore)
+        .map((league) => ({ id: league.id, name: league.name }));
+    }
+    if (manifest?.activeLeague) {
+      return [{ id: manifest.activeLeague.id, name: manifest.activeLeague.name }];
+    }
+    return [];
+  }, [manifest]);
+
+  const selectedLeagueId = preferences.selectedLeagueId;
+  const selectedOption = leagueOptions.find((option) => option.id === selectedLeagueId);
+  const selectedLeagueName = selectedOption?.name || t.selectLeague;
 
   function updatePreferences(next: SitePreferences) {
     setPreferences(next);
@@ -134,20 +197,35 @@ export function SiteNavbar({ initialLocale }: { initialLocale: Locale }) {
     applySitePreferences(next);
   }
 
+  function handleLeagueChange(nextLeagueId: string) {
+    if (!nextLeagueId || nextLeagueId === preferences.selectedLeagueId) {
+      return;
+    }
+    updatePreferences({
+      ...preferences,
+      selectedLeagueId: nextLeagueId
+    });
+  }
+
   function switchLocale(nextLocale: Locale) {
     router.push(replaceLocaleInPath(pathname, nextLocale));
   }
 
   function resetPreferences() {
-    updatePreferences(DEFAULT_SITE_PREFERENCES);
+    const defaultLeagueId = manifest
+      ? (manifest.defaultLeagueId || manifest.activeLeague.id)
+      : DEFAULT_SITE_PREFERENCES.selectedLeagueId;
+    updatePreferences({
+      ...DEFAULT_SITE_PREFERENCES,
+      selectedLeagueId: defaultLeagueId
+    });
   }
-
   const guideSteps = [t.landingGuideScan, t.landingGuideFilter, t.landingGuidePlan, t.landingGuideVerify];
 
   return (
     <>
       <nav className="sticky top-0 z-40 border-b border-primary/15 bg-background/92 shadow-[0_8px_30px_oklch(0.08_0.02_65/35%)] backdrop-blur-xl" aria-label={copy.browse}>
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
           <Link href={`/${localeRoute}`} className="group mr-auto flex min-w-0 items-center gap-3">
             <span className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-md border border-primary/35 bg-primary/10 text-primary shadow-[inset_0_1px_0_oklch(1_0_0/12%)]">
               <RouteIcon className="size-4 transition-transform group-hover:rotate-12" aria-hidden="true" />
@@ -181,6 +259,26 @@ export function SiteNavbar({ initialLocale }: { initialLocale: Locale }) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Select value={selectedLeagueId || undefined} onValueChange={handleLeagueChange}>
+            <SelectTrigger
+              aria-label={`${t.league}: ${selectedLeagueName}`}
+              className="h-9 w-[6.75rem] justify-start px-2 text-xs sm:w-36 sm:px-3 sm:text-sm md:w-44"
+            >
+              <TrophyIcon aria-hidden="true" />
+              <span className="truncate">{selectedLeagueName}</span>
+            </SelectTrigger>
+            <SelectContent position="popper" align="end">
+              <SelectGroup>
+                <SelectLabel>{t.league}</SelectLabel>
+                {leagueOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
 
           <Select value={locale} onValueChange={(value) => switchLocale(value as Locale)}>
             <SelectTrigger

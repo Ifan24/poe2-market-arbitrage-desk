@@ -106,6 +106,7 @@ import type {
   MarketDataSourceConfig,
   MarketDataStatus
 } from "@/lib/market-data-source";
+import { loadMarketDataBundle, useSelectedLeagueId } from "@/lib/market-data-client";
 import type { Locale } from "@/lib/locale";
 import {
   UI_TEXT,
@@ -181,17 +182,6 @@ function SnapshotUpdatePrompt({ importedAt, t }: { importedAt?: string; t: UiTex
   return null;
 }
 
-function resolveRemoteUrl(baseUrl: string, pathOrUrl: string) {
-  return new URL(pathOrUrl, `${baseUrl.replace(/\/+$/, "")}/`).toString();
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
-  }
-  return response.json() as Promise<T>;
-}
 
 function getFreshnessKind(
   importedAt: string | undefined,
@@ -798,6 +788,7 @@ function OpportunityCard({
 
 export function MarketDashboard({ initialData, initialLocale, dataSource }: DashboardProps) {
   const [marketData, setMarketData] = useState(initialData);
+  const selectedLeagueId = useSelectedLeagueId();
   const [remoteManifest, setRemoteManifest] = useState<MarketDataManifest | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<MarketDataStatus | null>(null);
   const [remoteError, setRemoteError] = useState("");
@@ -827,14 +818,11 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
 
     async function loadRemoteMarketData() {
       try {
-        const manifestUrl = resolveRemoteUrl(dataSource.baseUrl, dataSource.manifestPath);
-        const statusUrl = resolveRemoteUrl(dataSource.baseUrl, dataSource.statusPath);
-        const manifest = await fetchJson<MarketDataManifest>(manifestUrl);
-        const snapshotUrl = resolveRemoteUrl(dataSource.baseUrl, manifest.snapshot.url);
-        const [snapshot, status] = await Promise.all([
-          fetchJson<MarketData>(snapshotUrl),
-          fetchJson<MarketDataStatus>(statusUrl).catch(() => null)
-        ]);
+        const { manifest, snapshot, status } = await loadMarketDataBundle(dataSource, {
+          signal: abortController.signal,
+          preferredLeagueId: selectedLeagueId,
+          includeStatus: true
+        });
 
         if (abortController.signal.aborted) {
           return;
@@ -858,7 +846,7 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
     return () => {
       abortController.abort();
     };
-  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.statusPath]);
+  }, [dataSource.baseUrl, dataSource.manifestPath, dataSource.statusPath, selectedLeagueId]);
 
   const productionDataUnavailable = dataSource.requireRemote && remoteError;
   const tagIconItems = useMemo(() => {

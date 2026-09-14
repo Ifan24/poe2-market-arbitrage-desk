@@ -14,6 +14,15 @@ export type MarketDataManifest = {
     name: string;
     hardcore: boolean;
   };
+  defaultLeagueId?: string;
+  availableLeagues?: Array<{
+    id: string;
+    name: string;
+    hardcore: boolean;
+    manifest: { url: string };
+  }>;
+  status?: { url: string };
+  trendIndex?: { url: string };
   generatedAt: string;
   expectedRefreshIntervalMinutes: number;
   staleAfterMinutes: number;
@@ -83,6 +92,3 @@ export async function readMarketDataBootstrap(): Promise<MarketDataBootstrap> {
   };
 }
 
-export function resolveMarketDataUrl(baseUrl: string, pathOrUrl: string) {
-  return new URL(pathOrUrl, `${baseUrl.replace(/\/+$/, "")}/`).toString();
-}

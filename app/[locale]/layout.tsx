@@ -6,6 +6,7 @@ import { SiteNavbar } from "@/components/site-navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { DEFAULT_LOCALE, getLocaleFromRoute } from "@/lib/locale";
 import { ROOT_METADATA } from "@/lib/site-metadata";
+import { getMarketDataSourceConfig } from "@/lib/market-data-source";
 import "../globals.css";
 
 export const metadata = ROOT_METADATA;
@@ -21,11 +22,12 @@ export default async function LocaleLayout({
 }>) {
   const { locale: routeLocale } = await params;
   const initialLocale = getLocaleFromRoute(routeLocale) || DEFAULT_LOCALE;
+  const marketDataSource = getMarketDataSourceConfig();
 
   return (
     <html lang={initialLocale}>
       <body>
-        <SiteNavbar initialLocale={initialLocale} />
+        <SiteNavbar initialLocale={initialLocale} marketDataSource={marketDataSource} />
         {children}
         <SiteFooter locale={initialLocale} />
         <Toaster />
