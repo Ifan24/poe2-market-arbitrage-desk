@@ -20,6 +20,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { MarketGuideDialog } from "@/components/market-guide-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -220,7 +221,6 @@ export function SiteNavbar({
       selectedLeagueId: defaultLeagueId
     });
   }
-  const guideSteps = [t.landingGuideScan, t.landingGuideFilter, t.landingGuidePlan, t.landingGuideVerify];
 
   return (
     <>
@@ -341,15 +341,7 @@ export function SiteNavbar({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={guideOpen} onOpenChange={setGuideOpen}>
-        <DialogContent closeLabel={t.close} className="market-panel max-h-[min(92vh,760px)] overflow-y-auto sm:max-w-lg">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><RouteIcon className="text-primary" />{t.landingGuideTitle}</DialogTitle><DialogDescription>{t.landingHelperDescription}</DialogDescription></DialogHeader>
-          <ol className="grid gap-3">{guideSteps.map((step, index) => <li key={step} className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-3 rounded-md border bg-muted/45 p-3"><span className="grid size-8 place-items-center rounded-md border bg-background/55 text-sm font-semibold text-primary">{index + 1}</span><p className="pt-1 text-sm leading-6">{step}</p></li>)}</ol>
-          <div className="rounded-md border border-primary/25 bg-primary/10 p-3 text-sm leading-6">{t.landingGuideFreshness}</div>
-          <p className="text-xs leading-5 text-muted-foreground">{t.landingGuideDisclaimer}</p>
-          <div><Button asChild variant="outline"><a href={SOURCE_URL} target="_blank" rel="noreferrer"><ExternalLinkIcon />{t.landingGuideSource}</a></Button></div>
-        </DialogContent>
-      </Dialog>
+      <MarketGuideDialog t={t} locale={locale} open={guideOpen} onOpenChange={setGuideOpen} />
     </>
   );
 }

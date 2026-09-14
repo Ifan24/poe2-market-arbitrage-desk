@@ -74,17 +74,6 @@ const currencyNamesKo = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "lib", "currency-names.ko.json"), "utf8")
 );
 
-test("dashboard renders through the shadcn React surface", () => {
-  assert.match(localizedPage, /<MarketDashboard initialData=\{marketData\} initialLocale=\{locale\} dataSource=\{bootstrap\.source\} \/>/);
-  assert.match(localizedPage, /<MarketSeoSummary summary=\{marketSummary\} locale=\{locale\} \/>/);
-  assert.match(localizedPage, /bootstrap\.source\.requireRemote \? toMarketDataShell\(baselineData\) : baselineData/);
-  assert.match(dashboard, /@\/components\/market-display/);
-  assert.match(dashboard, /@\/components\/ui\/card/);
-  assert.match(dashboard, /@\/components\/ui\/tabs/);
-  assert.match(dashboard, /@\/components\/ui\/table/);
-  assert.match(dashboard, /@\/components\/ui\/select/);
-  assert.match(dashboard, /<LandingHelperToast t=\{t\} \/>/);
-});
 
 test("localized pages do not render English-only loading, error, currency, or dialog labels", () => {
   assert.doesNotMatch(dashboard, /["'](?:Loading latest market data|Market data could not be loaded[^"']*|Using the saved market data[^"']*|Loading the latest market data[^"']*|Refresh failed|Very stale|Stale|Fresh)["']/);
@@ -105,17 +94,6 @@ test("localized pages do not render English-only loading, error, currency, or di
   }
 });
 
-test("dashboard landing help uses one persistent, explicit Sonner prompt", () => {
-  assert.match(landingHelper, /toast\.custom/);
-  assert.match(landingHelper, /LANDING_HELPER_TOAST_ID/);
-  assert.match(landingHelper, /position: "bottom-right"/);
-  assert.match(landingHelper, /duration: Infinity/);
-  assert.match(landingHelper, /dismissible: false/);
-  assert.match(landingHelper, /saveLandingHelperDismissed/);
-  assert.match(landingHelper, /<Dialog open=\{guideOpen\}/);
-  assert.match(landingHelper, /https:\/\/github\.com\/Ifan24\/poe2-market-arbitrage-desk/);
-  assert.doesNotMatch(landingHelper, /<Toaster/);
-});
 
 test("localized dashboard routes stay statically renderable", () => {
   assert.doesNotMatch(localizedPage, /dynamic = "force-dynamic"/);

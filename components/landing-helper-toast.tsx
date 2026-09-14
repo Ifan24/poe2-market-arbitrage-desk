@@ -1,25 +1,19 @@
 "use client";
 
-import { CircleHelpIcon, ExternalLinkIcon, RouteIcon, XIcon } from "lucide-react";
+import { CircleHelpIcon, RouteIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
+import { MarketGuideDialog } from "@/components/market-guide-dialog";
 import {
   loadLandingHelperDismissed,
   saveLandingHelperDismissed
 } from "@/lib/dashboard-preferences";
+import type { Locale } from "@/lib/locale";
 import type { UiText } from "@/lib/market-locale";
 
 const LANDING_HELPER_TOAST_ID = "dashboard-landing-helper-v1";
-const SOURCE_URL = "https://github.com/Ifan24/poe2-market-arbitrage-desk";
 
 function LandingHelperNotice({
   t,
@@ -68,7 +62,7 @@ function LandingHelperNotice({
   );
 }
 
-export function LandingHelperToast({ t }: { t: UiText }) {
+export function LandingHelperToast({ t, locale }: { t: UiText; locale: Locale }) {
   const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
@@ -104,46 +98,5 @@ export function LandingHelperToast({ t }: { t: UiText }) {
     };
   }, [t]);
 
-  const steps = [t.landingGuideScan, t.landingGuideFilter, t.landingGuidePlan, t.landingGuideVerify];
-
-  return (
-    <Dialog open={guideOpen} onOpenChange={setGuideOpen}>
-      <DialogContent closeLabel={t.close} className="market-panel max-h-[min(92vh,760px)] overflow-y-auto bg-card text-card-foreground sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <RouteIcon className="text-primary" aria-hidden="true" />
-            {t.landingGuideTitle}
-          </DialogTitle>
-          <DialogDescription>{t.landingHelperDescription}</DialogDescription>
-        </DialogHeader>
-
-        <ol className="grid gap-3">
-          {steps.map((step, index) => (
-            <li key={step} className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-3 rounded-md border bg-muted/45 p-3">
-              <span
-                className="grid size-8 place-items-center rounded-md border bg-background/55 text-sm font-semibold text-primary"
-                aria-hidden="true"
-              >
-                {index + 1}
-              </span>
-              <p className="pt-1 text-sm leading-6">{step}</p>
-            </li>
-          ))}
-        </ol>
-
-        <div className="rounded-md border border-primary/25 bg-primary/10 p-3 text-sm leading-6">
-          {t.landingGuideFreshness}
-        </div>
-        <p className="text-xs leading-5 text-muted-foreground">{t.landingGuideDisclaimer}</p>
-        <div>
-          <Button asChild variant="outline">
-            <a href={SOURCE_URL} target="_blank" rel="noreferrer">
-              <ExternalLinkIcon data-icon="inline-start" />
-              {t.landingGuideSource}
-            </a>
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  return <MarketGuideDialog t={t} locale={locale} open={guideOpen} onOpenChange={setGuideOpen} />;
 }
