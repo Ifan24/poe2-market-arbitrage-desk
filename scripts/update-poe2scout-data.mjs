@@ -273,6 +273,7 @@ async function main() {
     categoryIconUrls,
     topOpportunities,
     extraRoot: {
+      leagueId: league.ShortName,
       goldCostSource: GOLD_COST_URL,
       goldCostsImported: goldCosts.size,
       snapshotEpoch: snapshot.Epoch

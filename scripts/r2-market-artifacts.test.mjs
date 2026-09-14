@@ -8,8 +8,8 @@ import {
   buildRefreshSummary,
   buildSnapshotHistoryIndex,
   collectIconUploads,
-  formatGitHubStepSummary,
   readHistoricalMarketSnapshots,
+  selectPublishedSoftcoreLeagues,
   uploadIconArtifacts,
   uploadMarketArtifacts
 } from "../lib/r2-market-artifacts.mjs";
@@ -48,6 +48,65 @@ test("R2 artifact bundle points manifests at a versioned league snapshot", () =>
   assert.equal(bundle.manifest.staleAfterMinutes, 90);
   assert.equal(bundle.manifest.veryStaleAfterMinutes, 240);
   assert.equal(JSON.parse(bundle.bodies.seoSummary).league.name, "Runes of Aldur");
+});
+
+test("configured publication advertises only its live subset, not newly discovered leagues", () => {
+  const leagues = [
+    { Value: "Forbidden Rites", ShortName: "forbiddenrites", IsCurrent: true },
+    { Value: "Runes of Aldur", ShortName: "runes", IsCurrent: true },
+    { Value: "Future League", ShortName: "future", IsCurrent: true }
+  ];
+  const league = leagues[0];
+  const bundle = buildMarketArtifactBundle({
+    snapshot: { ...snapshot(), league: league.Value },
+    league,
+    leagues: selectPublishedSoftcoreLeagues(leagues, {
+      league,
+      env: {
+        POE2SCOUT_ACTIVE_LEAGUES_JSON: '[" ForbiddenRites "]',
+        POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME: " FORBIDDENRITES "
+      }
+    }),
+    defaultLeagueId: " ForbiddenRites "
+  });
+  const manifest = JSON.parse(bundle.bodies.manifest);
+  assert.equal(bundle.publishRoot, true);
+  assert.equal(manifest.defaultLeagueId, "forbiddenrites");
+  assert.deepEqual(manifest.availableLeagues, [{
+    id: "forbiddenrites",
+    name: "Forbidden Rites",
+    hardcore: false,
+    manifest: { url: "/leagues/forbiddenrites/manifest.json" }
+  }]);
+  assert.deepEqual(selectPublishedSoftcoreLeagues(leagues, { league, env: {} }), leagues);
+});
+
+test("configured publication rejects missing, expired, and hardcore economies", () => {
+  const league = { Value: "Forbidden Rites", ShortName: "forbiddenrites", IsCurrent: true };
+  const leagues = [
+    league,
+    { Value: "Runes of Aldur", ShortName: "runes", IsCurrent: false },
+    { Value: "HC Forbidden Rites", ShortName: "forbiddenriteshc", IsCurrent: true }
+  ];
+  for (const id of ["missing", "runes", "forbiddenriteshc"]) {
+    assert.throws(() => selectPublishedSoftcoreLeagues(leagues, {
+      league,
+      env: { POE2SCOUT_ACTIVE_LEAGUES_JSON: JSON.stringify(["forbiddenrites", id]) }
+    }), /not a current softcore league/);
+  }
+});
+
+test("configured publication must include both the selected and default economy", () => {
+  const leagues = [
+    { Value: "Forbidden Rites", ShortName: "forbiddenrites", IsCurrent: true },
+    { Value: "Runes of Aldur", ShortName: "runes", IsCurrent: true }
+  ];
+  for (const configured of [["forbiddenrites"], ["runes"]]) {
+    assert.throws(() => selectPublishedSoftcoreLeagues(leagues, {
+      league: leagues[1],
+      env: { POE2SCOUT_ACTIVE_LEAGUES_JSON: JSON.stringify(configured) }
+    }), /must include league/);
+  }
 });
 
 test("R2 snapshot history keeps ordered league-scoped gaps", () => {
@@ -148,7 +207,8 @@ test("R2 snapshot history refuses previous history from another league", () => {
 test("R2 uploads write snapshot before mutable manifests", async () => {
   const bundle = buildMarketArtifactBundle({
     snapshot: snapshot(),
-    league: { Value: "Runes of Aldur", ShortName: "runes" }
+    league: { Value: "Runes of Aldur", ShortName: "runes" },
+    defaultLeagueId: "runes"
   });
   const sent = [];
   const uploads = await uploadMarketArtifacts(bundle, {
@@ -457,28 +517,109 @@ test("R2 icon uploads skip icons already recorded in the icon manifest", async (
   }
 });
 
-test("R2 upload summary is safe for GitHub step output", () => {
+test("R2 upload summary points non-default readers at league-scoped artifacts", () => {
   const bundle = buildMarketArtifactBundle({
     snapshot: snapshot(),
-    league: { Value: "Runes of Aldur", ShortName: "runes" }
+    league: { Value: "Runes of Aldur", ShortName: "runes" },
+    defaultLeagueId: "forbiddenrites"
   });
   const summary = buildRefreshSummary({
     bundle,
     uploads: [
       { key: bundle.keys.leagueHistory, bytes: 456, cacheControl: "public, max-age=300", historySnapshots: 7, historyWindowHours: 168 },
       { key: bundle.keys.leagueTrendIndex, bytes: 789, cacheControl: "public, max-age=300", trendRoutes: 12, trendSamples: 7 },
-      { key: bundle.keys.rootManifest, bytes: 123, cacheControl: "public, max-age=300" }
+      { key: bundle.keys.leagueManifest, bytes: 123, cacheControl: "public, max-age=300" }
     ],
     env: { R2_PUBLIC_BASE_URL: "https://data.example.com/" },
     icons: { count: 2, totalCount: 3, bytes: 5 },
     itemCount: 1
   });
-  const markdown = formatGitHubStepSummary(summary);
 
-  assert.equal(summary.manifestUrl, "https://data.example.com/manifest.json");
-  assert.match(markdown, /Runes of Aldur/);
-  assert.match(markdown, /`manifest\.json`/);
-  assert.match(markdown, /Icons: 2 uploaded, 3 tracked \(5 bytes uploaded\)/);
-  assert.match(markdown, /History coverage: 7 snapshots over 168 hours/);
-  assert.match(markdown, /Trend index: ok \(12 routes, 7 samples, 789 bytes\)/);
+  assert.equal(summary.manifestUrl, "https://data.example.com/leagues/runes/manifest.json");
+  assert.equal(summary.statusUrl, "https://data.example.com/leagues/runes/status.json");
+  assert.equal(summary.historySnapshots, 7);
+  assert.equal(summary.trendSamples, 7);
+});
+
+test("concurrent economies publish disjoint objects and only the default updates root", async () => {
+  const leagues = [
+    { Value: "Forbidden Rites", ShortName: "forbiddenrites", IsCurrent: true },
+    { Value: "Runes of Aldur", ShortName: "runes", IsCurrent: true },
+    { Value: "HC Forbidden Rites", ShortName: "forbiddenriteshc", IsCurrent: true },
+    { Value: "Old League", ShortName: "old", IsCurrent: false },
+    { Value: "Future League", ShortName: "future", IsCurrent: true }
+  ];
+  const writes = new Map();
+  const reads = new Map();
+  const publishedKeys = new Set();
+  for (const league of [leagues[1], leagues[0]]) {
+    const bundle = buildMarketArtifactBundle({
+      snapshot: { ...snapshot(), league: league.Value, leagueId: league.ShortName },
+      league,
+      leagues: selectPublishedSoftcoreLeagues(leagues, {
+        league,
+        env: { POE2SCOUT_ACTIVE_LEAGUES_JSON: '["forbiddenrites","runes"]' }
+      }),
+      defaultLeagueId: "forbiddenrites"
+    });
+    const sent = [];
+    const fetched = [];
+    await uploadMarketArtifacts(bundle, {
+      env: { R2_BUCKET_NAME: "bucket" },
+      client: {
+        async send(command) {
+          if ("Body" in command.input) {
+            if (command.input.Key === "manifest.json") {
+              const manifest = JSON.parse(command.input.Body);
+              for (const available of manifest.availableLeagues) {
+                assert.ok(publishedKeys.has(available.manifest.url.slice(1)));
+              }
+            }
+            publishedKeys.add(command.input.Key);
+            sent.push(command.input);
+          } else fetched.push(command.input.Key);
+          return {};
+        }
+      }
+    });
+    writes.set(league.ShortName, sent);
+    reads.set(league.ShortName, fetched);
+  }
+  const defaultWrites = writes.get("forbiddenrites");
+  const runesWrites = writes.get("runes");
+  const rootManifest = JSON.parse(defaultWrites.find((entry) => entry.Key === "manifest.json").Body);
+  assert.equal(rootManifest.activeLeague.id, "forbiddenrites");
+  assert.equal(rootManifest.defaultLeagueId, "forbiddenrites");
+  assert.deepEqual(rootManifest.availableLeagues, leagues.slice(0, 2).map((league) => ({
+    id: league.ShortName,
+    name: league.Value,
+    hardcore: false,
+    manifest: { url: `/leagues/${league.ShortName}/manifest.json` }
+  })));
+  assert.deepEqual(defaultWrites.filter((entry) => !entry.Key.startsWith("leagues/")).map((entry) => entry.Key).sort(),
+    ["history.json", "manifest.json", "seo-summary.json", "status.json", "trend-index.json"]);
+  assert.ok(runesWrites.every((entry) => entry.Key.startsWith("leagues/runes/")));
+  assert.deepEqual(runesWrites.map((entry) => entry.Key).sort(), [
+    "leagues/runes/history.json",
+    "leagues/runes/manifest.json",
+    "leagues/runes/seo-summary.json",
+    "leagues/runes/snapshots/hourly/2026-07-03T14-03-12Z.json",
+    "leagues/runes/status.json",
+    "leagues/runes/trend-index.json"
+  ]);
+  assert.ok(defaultWrites.every((entry) => !runesWrites.some((other) => other.Key === entry.Key)));
+  for (const [id, sent] of writes) {
+    const manifest = JSON.parse(sent.find((entry) => entry.Key === `leagues/${id}/manifest.json`).Body);
+    assert.equal(manifest.status.url, `/leagues/${id}/status.json`);
+    assert.equal(manifest.trendIndex.url, `/leagues/${id}/trend-index.json`);
+    assert.ok(manifest.snapshot.url.startsWith(`/leagues/${id}/snapshots/`));
+    assert.deepEqual(reads.get(id), [`leagues/${id}/history.json`]);
+  }
+});
+
+test("artifact publication rejects a snapshot from a different matrix league", () => {
+  assert.throws(() => buildMarketArtifactBundle({
+    snapshot: snapshot(),
+    league: { Value: "Forbidden Rites", ShortName: "forbiddenrites" }
+  }), /snapshot league does not match/);
 });

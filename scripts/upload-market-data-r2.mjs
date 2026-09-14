@@ -11,6 +11,7 @@ import {
   buildMarketArtifactBundle,
   buildRefreshSummary,
   formatGitHubStepSummary,
+  selectPublishedSoftcoreLeagues,
   uploadIconArtifacts,
   uploadMarketArtifacts
 } from "../lib/r2-market-artifacts.mjs";
@@ -25,10 +26,11 @@ async function main() {
   const bundle = buildMarketArtifactBundle({
     snapshot,
     league,
+    leagues: selectPublishedSoftcoreLeagues(leagues, { league }),
     provider: "poe2scout",
     realm: POE2SCOUT_REALM
   });
-  const icons = await uploadIconArtifacts({ iconDir: ICON_DIR });
+  const icons = bundle.publishRoot ? await uploadIconArtifacts({ iconDir: ICON_DIR }) : undefined;
   const uploads = await uploadMarketArtifacts(bundle);
   const summary = buildRefreshSummary({
     bundle,
@@ -44,7 +46,7 @@ async function main() {
   console.log(`Uploaded R2 manifest: ${summary.manifestUrl}`);
   console.log(`Uploaded R2 status: ${summary.statusUrl}`);
   console.log(`Uploaded R2 snapshot: ${summary.snapshotKey}`);
-  console.log(`Uploaded R2 icons: ${summary.icons.count} files`);
+  console.log(icons ? `Uploaded R2 icons: ${icons.count} files` : "Skipped shared icons for non-default league");
 }
 
 main().catch((error) => {

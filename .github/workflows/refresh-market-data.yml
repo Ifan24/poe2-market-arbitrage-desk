@@ -13,6 +13,9 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    env:
+      POE2SCOUT_ACTIVE_LEAGUES_JSON: ${{ vars.POE2SCOUT_ACTIVE_LEAGUES_JSON || '["forbiddenrites","runes"]' }}
+      POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME: ${{ vars.POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME || 'forbiddenrites' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,18 +29,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Refresh poe2scout snapshot
-        run: npm run update:poe2scout
-
       - name: Test
         run: npm test
 
-      - name: Upload market data to R2
+      - name: Refresh and upload leagues with default last
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
-          POE2SCOUT_ACTIVE_LEAGUE_SHORT_NAME: ${{ vars.POE2SCOUT_ACTIVE_LEAGUE_SHORT_NAME || 'runes' }}
-        run: npm run upload:market-data:r2
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from "node:child_process";
+          import { getConfiguredActiveLeagueShortNames } from "./lib/poe2scout-leagues.mjs";
+
+          const leagues = getConfiguredActiveLeagueShortNames();
+          const defaultLeague = process.env.POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME.trim().toLowerCase();
+          if (!leagues.includes(defaultLeague)) {
+            throw new Error("POE2SCOUT_ACTIVE_LEAGUES_JSON must include the configured default league");
+          }
+          const orderedLeagues = [...new Set(leagues.filter((league) => league !== defaultLeague)), defaultLeague];
+          for (const league of orderedLeagues) {
+            console.log(`::group::Refresh and publish ${league}`);
+            const env = {
+              ...process.env,
+              POE2SCOUT_ACTIVE_LEAGUE_SHORT_NAME: league,
+              POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME: defaultLeague
+            };
+            for (const script of ["update:poe2scout", "upload:market-data:r2"]) {
+              const result = spawnSync("npm", ["run", script], { env, stdio: "inherit" });
+              if (result.error) throw result.error;
+              if (result.status !== 0) {
+                throw new Error(`${script} failed for ${league}: ${result.signal || result.status}`);
+              }
+            }
+            console.log("::endgroup::");
+          }
+          NODE

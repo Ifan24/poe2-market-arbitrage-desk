@@ -15,6 +15,9 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    env:
+      POE2SCOUT_ACTIVE_LEAGUE_SHORT_NAME: ${{ vars.POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME || 'forbiddenrites' }}
+      POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME: ${{ vars.POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME || 'forbiddenrites' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
