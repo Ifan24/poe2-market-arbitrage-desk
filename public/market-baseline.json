@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "role": "baseline",
-  "generatedAt": "2026-09-28T22:38:29.037Z",
+  "generatedAt": "2026-09-29T21:32:07.998Z",
   "league": "Forbidden Rites",
   "source": "poe2scout",
   "categories": [
@@ -15450,7 +15450,7 @@
       }
     ],
     "importedFrom": "poe2scout Forbidden Rites official exchange snapshot",
-    "importedAt": "2026-09-28T22:38:29.037Z",
+    "importedAt": "2026-09-29T21:32:07.998Z",
     "filters": {
       "minTradeValueDivine": 50,
       "minStock": 200,
