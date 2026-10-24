@@ -1,5 +1,8 @@
 const GITHUB_API_VERSION = "2022-11-28";
 const WORKER_USER_AGENT = "poe2-market-refresh-dispatcher";
+const DEFAULT_REFRESH_INTERVAL_HOURS = 6;
+// The cron fires hourly; slots are aligned to UTC midnight, so the interval must divide a day evenly.
+const SUPPORTED_REFRESH_INTERVAL_HOURS = [1, 2, 3, 4, 6, 8, 12, 24];
 
 function requiredEnv(env, key) {
   const value = env[key];
@@ -19,8 +22,23 @@ export function getDispatchConfig(env) {
   };
 }
 
+export function getRefreshIntervalHours(env) {
+  const hours = Number(env.REFRESH_INTERVAL_HOURS || DEFAULT_REFRESH_INTERVAL_HOURS);
+  if (SUPPORTED_REFRESH_INTERVAL_HOURS.includes(hours)) {
+    return hours;
+  }
+
+  console.warn(`Unsupported REFRESH_INTERVAL_HOURS=${env.REFRESH_INTERVAL_HOURS}; using ${DEFAULT_REFRESH_INTERVAL_HOURS}`);
+  return DEFAULT_REFRESH_INTERVAL_HOURS;
+}
+
+export function isRefreshSlot(scheduledTime, refreshIntervalHours) {
+  return new Date(scheduledTime).getUTCHours() % refreshIntervalHours === 0;
+}
+
 export async function dispatchMarketRefresh(env, fetchImpl = fetch) {
   const { owner, repo, workflowId, ref, token } = getDispatchConfig(env);
+  const refreshIntervalHours = getRefreshIntervalHours(env);
   const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`;
   const response = await fetchImpl(url, {
     method: "POST",
@@ -31,7 +49,7 @@ export async function dispatchMarketRefresh(env, fetchImpl = fetch) {
       "user-agent": WORKER_USER_AGENT,
       "x-github-api-version": GITHUB_API_VERSION
     },
-    body: JSON.stringify({ ref })
+    body: JSON.stringify({ ref, inputs: { refresh_interval_hours: String(refreshIntervalHours) } })
   });
 
   if (response.status === 204) {
@@ -41,6 +59,7 @@ export async function dispatchMarketRefresh(env, fetchImpl = fetch) {
       repo,
       workflowId,
       ref,
+      refreshIntervalHours,
       dispatchedAt: new Date().toISOString()
     };
   }
@@ -68,7 +87,10 @@ function isAuthorized(request, env) {
 }
 
 export default {
-  async scheduled(_controller, env, ctx) {
+  async scheduled(controller, env, ctx) {
+    if (!isRefreshSlot(controller.scheduledTime, getRefreshIntervalHours(env))) {
+      return;
+    }
     ctx.waitUntil(dispatchMarketRefresh(env));
   },
 
@@ -79,6 +101,7 @@ export default {
         service: "poe2-market-refresh-dispatcher",
         workflowId: env.GITHUB_WORKFLOW_ID || "refresh-market-data.yml",
         ref: env.GITHUB_REF || "master",
+        refreshIntervalHours: getRefreshIntervalHours(env),
         manualDispatchEnabled: Boolean(env.DISPATCH_SECRET)
       });
     }

@@ -6,8 +6,10 @@
   "workers_dev": true,
   "preview_urls": false,
   "triggers": {
-    "crons": ["17 */6 * * *"]
+    "crons": ["17 * * * *"]
   },
+  // REFRESH_INTERVAL_HOURS is managed in the Cloudflare dashboard (default 6); keep_vars stops deploys from removing it.
+  "keep_vars": true,
   "vars": {
     "GITHUB_OWNER": "Ifan24",
     "GITHUB_REPO": "poe2-market-arbitrage-desk",

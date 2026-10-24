@@ -2,6 +2,12 @@ name: Refresh market data
 
 on:
   workflow_dispatch:
+    inputs:
+      refresh_interval_hours:
+        description: Hours between scheduled refreshes, sent by the Cloudflare dispatcher
+        required: false
+        default: "6"
+        type: string
 
 permissions:
   contents: read
@@ -16,6 +22,7 @@ jobs:
     env:
       POE2SCOUT_ACTIVE_LEAGUES_JSON: ${{ vars.POE2SCOUT_ACTIVE_LEAGUES_JSON || '["forbiddenrites","runes"]' }}
       POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME: ${{ vars.POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME || 'forbiddenrites' }}
+      REFRESH_INTERVAL_HOURS: ${{ inputs.refresh_interval_hours || '6' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

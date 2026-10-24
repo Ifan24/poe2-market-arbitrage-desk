@@ -119,6 +119,7 @@ import {
   type UiText
 } from "@/lib/market-locale";
 import {
+  getMarketFreshnessThresholds,
   getScheduledSnapshotRefreshSlot,
   shouldShowScheduledSnapshotReminder
 } from "@/lib/market-refresh-schedule";
@@ -136,12 +137,20 @@ const MARKET_VALUE_DIGITS = 3;
 const SNAPSHOT_REMINDER_CHECK_INTERVAL_MS = 60 * 1000;
 const SNAPSHOT_REMINDER_TOAST_ID = "snapshot-refresh-reminder";
 
-function SnapshotUpdatePrompt({ importedAt, t }: { importedAt?: string; t: UiText }) {
+function SnapshotUpdatePrompt({
+  importedAt,
+  refreshIntervalHours,
+  t
+}: {
+  importedAt?: string;
+  refreshIntervalHours?: number;
+  t: UiText;
+}) {
   const [dismissedSlot, setDismissedSlot] = useState(() => loadDismissedSnapshotReminderSlot());
 
   useEffect(() => {
     function checkRefreshWindow() {
-      if (!shouldShowScheduledSnapshotReminder(importedAt, dismissedSlot)) {
+      if (!shouldShowScheduledSnapshotReminder(importedAt, dismissedSlot, new Date(), refreshIntervalHours)) {
         toast.dismiss(SNAPSHOT_REMINDER_TOAST_ID);
         return;
       }
@@ -153,7 +162,7 @@ function SnapshotUpdatePrompt({ importedAt, t }: { importedAt?: string; t: UiTex
         action: {
           label: t.refreshPage,
           onClick: () => {
-            const slot = getScheduledSnapshotRefreshSlot();
+            const slot = getScheduledSnapshotRefreshSlot(new Date(), refreshIntervalHours);
             saveDismissedSnapshotReminderSlot(slot);
             setDismissedSlot(slot);
             window.location.reload();
@@ -177,7 +186,7 @@ function SnapshotUpdatePrompt({ importedAt, t }: { importedAt?: string; t: UiTex
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [dismissedSlot, importedAt]);
+  }, [dismissedSlot, importedAt, refreshIntervalHours]);
 
   return null;
 }
@@ -193,8 +202,9 @@ function getFreshnessKind(
     return "very-stale";
   }
 
-  const staleAfterMinutes = manifest?.staleAfterMinutes ?? 90;
-  const veryStaleAfterMinutes = manifest?.veryStaleAfterMinutes ?? 240;
+  const defaults = getMarketFreshnessThresholds(undefined);
+  const staleAfterMinutes = manifest?.staleAfterMinutes ?? defaults.staleAfterMinutes;
+  const veryStaleAfterMinutes = manifest?.veryStaleAfterMinutes ?? defaults.veryStaleAfterMinutes;
   const ageMinutes = Math.max(0, (now - importedAtMs) / 60000);
 
   if (ageMinutes > veryStaleAfterMinutes) {
@@ -1076,7 +1086,13 @@ export function MarketDashboard({ initialData, initialLocale, dataSource }: Dash
             {isWaitingForRequiredRemoteData ? null : (
               <>
                 {isAllRoutes ? <AllRoutesSummary t={t} /> : selectedMode ? <RouteSummary mode={selectedMode} locale={locale} /> : null}
-                <SnapshotUpdatePrompt importedAt={state.importedAt} t={t} />
+                <SnapshotUpdatePrompt
+                  importedAt={state.importedAt}
+                  refreshIntervalHours={
+                    remoteManifest ? remoteManifest.expectedRefreshIntervalMinutes / 60 : undefined
+                  }
+                  t={t}
+                />
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <StatCard
                     label={t.bestRoi}

@@ -27,6 +27,26 @@ function snapshot() {
   };
 }
 
+test("R2 manifest freshness thresholds follow the dispatched refresh interval", () => {
+  const hourly = buildMarketArtifactBundle({
+    snapshot: snapshot(),
+    league: { Value: "Runes of Aldur", ShortName: "runes" },
+    refreshIntervalHours: "1",
+    now: new Date("2026-07-03T14:04:00.000Z")
+  });
+  assert.equal(hourly.manifest.expectedRefreshIntervalMinutes, 60);
+  assert.equal(hourly.manifest.staleAfterMinutes, 120);
+  assert.equal(hourly.manifest.veryStaleAfterMinutes, 180);
+
+  const unsupported = buildMarketArtifactBundle({
+    snapshot: snapshot(),
+    league: { Value: "Runes of Aldur", ShortName: "runes" },
+    refreshIntervalHours: "5",
+    now: new Date("2026-07-03T14:04:00.000Z")
+  });
+  assert.equal(unsupported.manifest.expectedRefreshIntervalMinutes, 360);
+});
+
 test("R2 artifact bundle points manifests at a versioned league snapshot", () => {
   const bundle = buildMarketArtifactBundle({
     snapshot: snapshot(),
@@ -45,8 +65,9 @@ test("R2 artifact bundle points manifests at a versioned league snapshot", () =>
   assert.equal(bundle.keys.snapshot, "leagues/runes/snapshots/hourly/2026-07-03T14-03-12Z.json");
   assert.equal(bundle.manifest.activeLeague.id, "runes");
   assert.equal(bundle.manifest.snapshot.url, "/leagues/runes/snapshots/hourly/2026-07-03T14-03-12Z.json");
-  assert.equal(bundle.manifest.staleAfterMinutes, 90);
-  assert.equal(bundle.manifest.veryStaleAfterMinutes, 240);
+  assert.equal(bundle.manifest.expectedRefreshIntervalMinutes, 360);
+  assert.equal(bundle.manifest.staleAfterMinutes, 420);
+  assert.equal(bundle.manifest.veryStaleAfterMinutes, 780);
   assert.equal(JSON.parse(bundle.bodies.seoSummary).league.name, "Runes of Aldur");
 });
 

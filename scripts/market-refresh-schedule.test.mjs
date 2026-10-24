@@ -17,6 +17,25 @@ test("scheduled refresh slots follow the six-hour UTC cron", () => {
   );
 });
 
+test("scheduled refresh slots follow a shorter configured interval", () => {
+  assert.equal(
+    getScheduledSnapshotRefreshSlot(new Date("2026-08-01T06:22:00.000Z"), 1),
+    "2026-08-01T06:17:00.000Z"
+  );
+  assert.equal(
+    getScheduledSnapshotRefreshSlot(new Date("2026-08-01T06:10:00.000Z"), 1),
+    "2026-08-01T05:17:00.000Z"
+  );
+  assert.equal(
+    shouldShowScheduledSnapshotReminder("2026-08-01T05:18:00.000Z", "", new Date("2026-08-01T06:22:00.000Z"), 1),
+    true
+  );
+  assert.equal(
+    shouldShowScheduledSnapshotReminder("2026-08-01T00:18:00.000Z", "", new Date("2026-08-01T05:22:00.000Z"), 6),
+    false
+  );
+});
+
 test("snapshot reminder waits for grace and respects fresh or dismissed slots", () => {
   const beforePrompt = new Date("2026-08-01T06:21:59.000Z");
   const afterPrompt = new Date("2026-08-01T06:22:00.000Z");

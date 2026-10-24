@@ -237,11 +237,11 @@ test("dashboard keeps market refresh out of the hosted UI", () => {
   assert.match(dashboard, /targetsIndexed/);
 });
 
-test("dashboard reminds stale tabs around the six-hour snapshot refresh window", () => {
+test("dashboard reminds stale tabs around the configured snapshot refresh window", () => {
   assert.match(refreshWorkflow, /workflow_dispatch:/);
   assert.doesNotMatch(refreshWorkflow, /schedule:/);
-  assert.match(cloudflareRefreshDispatcher, /"crons": \["17 \*\/6 \* \* \*"\]/);
-  assert.match(marketRefreshSchedule, /MARKET_REFRESH_INTERVAL_HOURS = 6/);
+  assert.match(cloudflareRefreshDispatcher, /"crons": \["17 \* \* \* \*"\]/);
+  assert.match(marketRefreshSchedule, /DEFAULT_MARKET_REFRESH_INTERVAL_HOURS = 6/);
   assert.match(marketRefreshSchedule, /MARKET_REFRESH_MINUTE = 17/);
   assert.match(marketRefreshSchedule, /SNAPSHOT_PROMPT_GRACE_MINUTES = 5/);
   assert.match(dashboard, /shouldShowScheduledSnapshotReminder/);
