@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import {
   POE2DB_CURRENCY_EXCHANGE_URL,
@@ -19,6 +20,7 @@ import {
 import { writeMarketDataFiles } from "../lib/market-snapshot-storage.mjs";
 import {
   convertImageToWebp,
+  eachWithConcurrency,
   fetchBuffer,
   fetchJson,
   fetchText
@@ -35,6 +37,7 @@ const ICON_DIR = new URL("../public/item-icons/", import.meta.url);
 const ICON_PUBLIC_PREFIX = "/item-icons";
 const API_BASE = getPoe2ScoutLeagueApiBase({ realm: REALM });
 const GOLD_COST_URL = POE2DB_CURRENCY_EXCHANGE_URL;
+const ICON_DOWNLOAD_CONCURRENCY = 6;
 
 const FILTERS = {
   minTradeValueDivine: Number(process.env.POE2SCOUT_MIN_VALUE_TRADED_DIVINE || "50"),
@@ -99,26 +102,41 @@ async function localizeIcons(rows, iconSources) {
     row.iconUrl = localPath;
   }
 
-  await Promise.all(
-    [...downloads].map(async ([localPath, sourceUrl]) => {
-      const sourceBuffer = await fetchImage(sourceUrl);
-      const converted = await convertImageToWebp(sourceBuffer, { fallbackToOriginal: false });
-      if (converted) {
-        await writeFile(new URL(`../public${localPath}`, import.meta.url), converted);
-        return;
-      }
-
-      const fallbackPath = localPath.replace(/\.webp$/, getIconExtension(sourceUrl));
-      await writeFile(new URL(`../public${fallbackPath}`, import.meta.url), sourceBuffer);
+  // Checked-in icons are reused; only icons missing locally are fetched.
+  const missing = [...downloads].filter(([localPath]) => !existsSync(new URL(`../public${localPath}`, import.meta.url)));
+  let failed = 0;
+  await eachWithConcurrency(missing, ICON_DOWNLOAD_CONCURRENCY, async ([localPath, sourceUrl]) => {
+    let sourceBuffer;
+    try {
+      sourceBuffer = await fetchImage(sourceUrl);
+    } catch (error) {
+      // A missing icon should not block the market refresh; point the row at the source image instead.
+      failed += 1;
+      console.warn(`::warning::Icon download failed, using source URL: ${error.message}`);
       for (const row of rows) {
         if (row.iconUrl === localPath) {
-          row.iconUrl = fallbackPath;
+          row.iconUrl = sourceUrl;
         }
       }
-    })
-  );
+      return;
+    }
 
-  return { downloaded: downloads.size };
+    const converted = await convertImageToWebp(sourceBuffer, { fallbackToOriginal: false });
+    if (converted) {
+      await writeFile(new URL(`../public${localPath}`, import.meta.url), converted);
+      return;
+    }
+
+    const fallbackPath = localPath.replace(/\.webp$/, getIconExtension(sourceUrl));
+    await writeFile(new URL(`../public${fallbackPath}`, import.meta.url), sourceBuffer);
+    for (const row of rows) {
+      if (row.iconUrl === localPath) {
+        row.iconUrl = fallbackPath;
+      }
+    }
+  });
+
+  return { downloaded: missing.length - failed, reused: downloads.size - missing.length, failed };
 }
 
 async function fetchCurrencyExchangeData() {
@@ -291,7 +309,7 @@ async function main() {
   console.log(`League: ${league.Value} (${league.ShortName})`);
   console.log(`Filters: ${JSON.stringify(FILTERS)}`);
   console.log(`Gold costs: ${goldCosts.size}`);
-  console.log(`Downloaded or updated icons: ${iconStats.downloaded}`);
+  console.log(`Downloaded or updated icons: ${iconStats.downloaded}; reused: ${iconStats.reused}; failed: ${iconStats.failed}`);
   console.log(`Targets: ${snapshotData.state.targets.length}, opportunities: ${topOpportunities.length}`);
 }
 
