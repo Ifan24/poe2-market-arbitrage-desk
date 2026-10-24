@@ -42,6 +42,7 @@ Show the owner a short table: league, `IsCurrent`, pairs, current (in config?) v
 
 - `POE2SCOUT_ACTIVE_LEAGUES_JSON`: compact JSON array of the kept softcore short names, e.g. `["newleague","runes"]`.
 - `POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME`: usually the newest challenge league once it has data. It must be in the array.
+- Refresh cadence: at league start prices move fast, so suggest `REFRESH_INTERVAL_HOURS=1` for the first week or two, then back to `6` (the default). Check the current value with `curl -s https://poe2-market-refresh-dispatcher.ruiqili1024.workers.dev | jq .refreshIntervalHours`.
 
 Do not set anything until the owner confirms. If nothing changes, say so and stop.
 
@@ -53,12 +54,14 @@ gh variable set POE2SCOUT_DEFAULT_LEAGUE_SHORT_NAME --body 'newleague'
 gh variable list
 ```
 
-Repo variables override the workflow fallback, so no code change is needed. Optionally offer to update the fallback in the workflow too (a commit, owner reviews it), so the repo matches the variables.
+Repo variables override the workflow fallback, so no code change is needed.
+
+The cadence is a Cloudflare Worker variable, not a GitHub one. The owner sets it in the Cloudflare dashboard: Workers, `poe2-market-refresh-dispatcher`, Settings, Variables, `REFRESH_INTERVAL_HOURS` (one of 1, 2, 3, 4, 6, 8, 12, 24). It applies from the next hour; `wrangler deploy` keeps it. Remind the owner to set it back to `6` later in the league. Optionally offer to update the fallback in the workflow too (a commit, owner reviews it), so the repo matches the variables.
 
 ## 5. Refresh and verify
 
 ```bash
-gh workflow run refresh-market-data.yml
+gh workflow run refresh-market-data.yml -f refresh_interval_hours=<current cadence>
 sleep 5; gh run list --workflow refresh-market-data.yml -L 1
 gh run watch <run-id> --exit-status
 gh run view <run-id> --log | grep -E "Refresh and publish|failed|Error" 
