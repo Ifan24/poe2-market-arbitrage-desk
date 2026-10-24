@@ -109,11 +109,13 @@ This baseline is committed at most once per day. It is not the live market sourc
 
 On Vercel, runtime writes to `public/` are not durable. Runtime refresh is disabled by default everywhere and requires both `MARKET_REFRESH_ALLOW_RUNTIME_WRITE=1` and a valid `MARKET_REFRESH_TOKEN` on an explicitly writable trusted runtime. The recommended public path is:
 
-1. Refresh market data every six hours through the dispatched workflow and upload it to the public data host.
+1. Refresh market data on a schedule through the dispatched workflow and upload it to the public data host.
 2. Refresh and commit `public/market-baseline.json` with the daily baseline workflow.
 3. Let Vercel deploy app code and daily baseline changes only.
 
-This repo includes `.github/workflows/refresh-market-data.yml`, which refreshes the market data when dispatched and uploads generated artifacts to the public data host. Six-hour scheduling is handled by the Cloudflare Worker in `cloudflare/market-refresh-dispatcher`, which calls GitHub's workflow dispatch API at 00:17, 06:17, 12:17, and 18:17 UTC.
+This repo includes `.github/workflows/refresh-market-data.yml`, which refreshes the market data when dispatched and uploads generated artifacts to the public data host. Scheduling is handled by the Cloudflare Worker in `cloudflare/market-refresh-dispatcher`. Its cron fires at minute 17 of every hour and dispatches the workflow only when the UTC hour is a multiple of `REFRESH_INTERVAL_HOURS` (default `6`, so 00:17, 06:17, 12:17, and 18:17 UTC). The interval is passed to the workflow, written into the manifest freshness thresholds, and used by the dashboard's update reminder.
+
+To change the cadence (for example `1` at league start, `6` late in a league), set the Worker variable `REFRESH_INTERVAL_HOURS` in the Cloudflare dashboard to one of 1, 2, 3, 4, 6, 8, 12, or 24. No code change or redeploy is needed, and `wrangler deploy` keeps the dashboard value.
 
 This repo also includes `.github/workflows/refresh-market-baseline.yml`, which refreshes and commits only `public/market-baseline.json` once per day.
 

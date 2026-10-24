@@ -107,11 +107,13 @@ Baseline 最多每天提交一次，不是即時市場來源。它讓 app 在公
 
 在 Vercel 上，執行期間寫入 `public/` 並不是持久儲存。Runtime refresh 在所有環境都預設停用；只有受信任且可寫入的 runtime 同時設定 `MARKET_REFRESH_ALLOW_RUNTIME_WRITE=1` 與 `MARKET_REFRESH_TOKEN` 才能啟用。建議的公開部署流程是：
 
-1. 由 dispatched workflow 每六小時更新市場資料並上傳到公開資料主機。
+1. 由 dispatched workflow 定期更新市場資料並上傳到公開資料主機。
 2. 由每日 baseline workflow 更新並提交 `public/market-baseline.json`。
 3. Vercel 只部署 app 程式碼與每日 baseline 變更。
 
-此 repo 包含 `.github/workflows/refresh-market-data.yml`，被 dispatch 時會更新市場資料並上傳產生的 artifacts。每六小時排程由 `cloudflare/market-refresh-dispatcher` 裡的 Cloudflare Worker 負責，會在 UTC 00:17、06:17、12:17 與 18:17 呼叫 GitHub workflow dispatch API。
+此 repo 包含 `.github/workflows/refresh-market-data.yml`，被 dispatch 時會更新市場資料並上傳產生的 artifacts。排程由 `cloudflare/market-refresh-dispatcher` 裡的 Cloudflare Worker 負責。它的 cron 每小時第 17 分鐘觸發，只有在 UTC 小時數是 `REFRESH_INTERVAL_HOURS` 的倍數時才 dispatch workflow（預設 `6`，即 UTC 00:17、06:17、12:17 與 18:17）。這個間隔會傳給 workflow，寫入 manifest 的新鮮度門檻，並用於儀表板的更新提醒。
+
+要調整頻率（例如賽季初設 `1`、賽季後期設 `6`），在 Cloudflare dashboard 把 Worker 變數 `REFRESH_INTERVAL_HOURS` 設為 1、2、3、4、6、8、12 或 24 其中之一即可，不需要改程式或重新部署，`wrangler deploy` 也會保留 dashboard 上的值。
 
 `.github/workflows/refresh-market-baseline.yml` 每天只更新並提交 `public/market-baseline.json`。
 
